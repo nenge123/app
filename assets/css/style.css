@@ -1,0 +1,118 @@
+#mainpage .list{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-end;
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+}
+#mainpage .list li{
+    text-align: center;
+    margin: .5em;
+}
+#mainpage .list li div{
+    cursor: pointer;
+}
+#mainpage .list li img{
+    width: 80px;
+}
+.video-pagination{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 3px;
+}
+.video-pagination span{
+    min-width: 40px;
+    text-align: center;
+}
+.video-tag-ul{
+    display: flex;justify-content: flex-start;align-items: center;list-style: none;
+
+}
+.video-tag-ul li{
+    margin: 10px;
+    padding: 3px 5px;
+    border-radius: 5px;
+    background-color: #15b2f0;
+    color: #fff;
+    cursor: pointer;
+}
+.video-search{
+    display: flex;
+    justify-content: center;
+    margin: 5px;
+}
+.video-search button{
+    min-width: 80px;
+    padding: 5px;
+}
+.noevent{
+    pointer-events:none !important;
+}
+.noevent *{
+    pointer-events: none !important;
+}
+.video-list-ul{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items:stretch;
+    list-style: none;
+    padding: .5em;
+    margin: 0px;
+}
+.video-list-ul li{
+    width: 180px;
+    margin: 5px;
+}
+.video-list-ul li div{
+    padding: 5px;
+    font-size: xx-small;
+}
+.video-list-ul li p{
+    margin: 3px auto;
+}
+.video-list-ul img{
+    max-width: 98%;
+    border: solid #b1b1b1 1px;
+    padding: 1px;
+    width: 178px;
+}
+#video-media{
+    width: 98%;
+    margin: 0px auto;
+}
+.video-play-ul{
+    display: flex;justify-content: flex-start;align-items: center;list-style: none;
+}
+
+.video-play-ul li{
+    margin: 10px;
+    padding: 3px 5px;
+    border-radius: 5px;
+    background-color: #15b2f0;
+    color: #fff;
+    cursor: pointer;
+}
+.video-play-ul2 li{
+    margin: 10px 0px;
+}
+.video-play-ul2 li{
+    margin: 10px;
+    padding: 3px 5px;
+    border-radius: 5px;
+    border-bottom: solid 1px #15b2f0;
+    color: #000;
+    cursor: pointer;
+}
+
+.window {
+    padding: 5px;
+}
+.window-header .panel-tool {
+    display: unset;
+}

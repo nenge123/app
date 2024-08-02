@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/easyui/themes/bootstrap/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/easyui/themes/mobile.css">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/easyui/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+    <script type="text/javascript" src="/assets/vendor/easyui/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/vendor/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/assets/vendor/easyui/jquery.easyui.mobile.js"></script>
+
+    <title>能哥网</title>
+</head>
+<body>
+    <div id="mainpage" title="能哥网" class="easyui-navpanel" data-options="maximized:true">
+        <header>
+            <div class="m-toolbar">
+                <div class="m-title">能哥网</div>
+            </div>
+        </header>
+        <ul class="list">
+            <li>
+                <div class="easyui-linkbutton" data-options="onClick:e=>N.callMethod('openVideo')" title="在线视频">
+                    <img src="/assets/images/icon-video.svg">
+                    <p>在线视频</p>
+                </div>
+            </li>
+            <li>
+                <div class="easyui-linkbutton" data-options="onClick:e=>N.callMethod('openReader')" title="小说阅读">
+                    <img src="/assets/images/icon-reader.png">
+                    <p>小说阅读</p>
+                </div>
+            </li>
+        </ul>
+        <footer>
+            资源数据来自于网络,如有冒犯请及时告知!
+        </footer>
+    </div>
+    <div id="other"></div>
+    <script type="module">
+        import '/assets/js/Module/common.js';
+    </script>
+</body>
+</html>

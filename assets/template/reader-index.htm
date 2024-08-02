@@ -1,0 +1,26 @@
+<div id="reader" class="easyui-navpanel" data-option="maximized:true">
+    <header>
+        <div class="m-toolbar">
+            <div class="m-title">视频观看</div>
+            <div class="m-left"><button class="easyui-linkbutton m-back"
+                    data-options="onClick:()=>myReader.closeVideo()">返回</button>
+            </div>
+            <div class="m-right">
+                <label>
+                    <span>朗读者:</span>
+                    <select id="reader-voice" class="easyui-combobox" style="width:200px;">
+                        <option value="">请稍等</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+        <div id="video-menu-list" class="easyui-menu" style="width:150px;">
+            <div data-options="iconCls:'icon-undo',method:'import',mode:0">覆盖数据库</div>
+            <div data-options="iconCls:'icon-undo',method:'import',mode:1">追加数据库</div>
+            <div data-options="iconCls:'icon-redo',method:'export'">分享数据库</div>
+            <div data-options="iconCls:'icon-remove',method:'clear'">清空数据库</div>
+            <div data-options="iconCls:'icon-remove',method:'test'">调试</div>
+        </div>
+    </header>
+    <div class="panel-loading">Loading...</div>
+</div>
