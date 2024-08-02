@@ -64,6 +64,9 @@ class MyWorker extends Worker{
             }
             if (this.callMessage instanceof Function) return this.callMessage(data, port);
         });
+        this.addEventListener('error',function(event){
+            alert(event.message);
+        });
         if(message)this.postMessage(message,transf);
     }
     setMessage(fn,message,transf){

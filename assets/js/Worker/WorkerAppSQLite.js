@@ -118,9 +118,9 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 const mode = data.mode;
                 const tablelist = data.tablelist;
                 const password = data.password;
-                const mime = await (file.slice(0, 4).text());
+                const mime = await (file.slice(0,2).text());
                 const keylist = Object.keys(tablelist.data);
-                if (mime == 'PK') {
+                if (mime == 'PK') {
                     const datas = await this.unzip(file,password);
                     if (datas && datas.size) {
                         for (let item of datas) {

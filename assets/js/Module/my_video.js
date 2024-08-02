@@ -199,7 +199,6 @@ export default class MY_VIDEO{
                     const href = URL.createObjectURL(data.result);
                     elm.innerHTML = data.ready;
                     N.downURL(href,elm.getAttribute('title')+'-片段('+data.PathIndex+').ts');
-                    URL.revokeObjectURL(href);
                     delete data.result;
                 }
             }

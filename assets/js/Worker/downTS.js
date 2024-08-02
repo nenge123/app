@@ -152,10 +152,11 @@ self.addEventListener('message',async function(event){
         if(databuf&&databuf.byteLength){
             if (frag.key&&frag.key.href) {
                 if(nowbuff!=frag.key.href&&chunks.length){
+                    let result = new Blob(chunks,{type:'video/mp2t'});
                     postMessage({
                         ready:'下载完成',
                         PathIndex,
-                        result:new Blob(chunks,{type:'video/mp2t'})
+                        result
                     });
                     chunks = [];
                     PathIndex+=1;
