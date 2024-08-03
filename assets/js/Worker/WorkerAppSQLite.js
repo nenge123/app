@@ -122,8 +122,9 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 const file = data.result;
                 const insertkeys = data.insertkeys;
                 if(file instanceof Map){
-                    for(const buf of file){
-                        let result = await this.callMethod('import_read_buf',buf[1],insertkeys);
+                    for(let newbuf of file){
+                        if(!newbuf[1].byteLength) continue;
+                        let result = await this.callMethod('import_read_buf',newbuf[1],insertkeys);
                         if(result) return result;
                     }
                 }else if(file instanceof Uint8Array){

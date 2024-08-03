@@ -56,11 +56,9 @@ export default class MY_VIDEO{
                         const worker = await this.openSQL();
                         const mime = await file.slice(0,2).text();
                         if(mime==='PK'){
-                            const result = await N.unzip(file,'IAM18');
-                            await worker.getFeedback({method:'importFile',result,insertkeys})
+                            await worker.getFeedback({method:'importFile',result:await N.unzip(file,'IAM18'),insertkeys})
                         }else{
-                            const result2 = new Uint8Array(await file.arrayBuffer());
-                            await worker.getFeedback({method:'importFile',result:result2,insertkeys},[result2.buffer]);
+                            await worker.getFeedback({method:'importFile',result:new Uint8Array(await file.arrayBuffer()),insertkeys});
                         }
                         worker.postMethod('exitworker');
                     }
