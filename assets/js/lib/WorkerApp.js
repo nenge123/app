@@ -127,37 +127,6 @@ class WorkerApp {
     async cache_has(name, cachename) {
         return await this.callFunc('cache_has', name, cachename);
     }
-    async unzip(file, password) {
-        if (typeof file === 'string') {
-            let response = await fetch(file);
-            if (!response || response.status != 200) {
-                throw response.statusText;
-            }
-            file = await response.blob();
-        }
-        return new Promise((back, error) => {
-            const work = new Worker(this.worker_root + 'WorkerAppZip.js');
-            work.addEventListener('message', event => {
-                const data = event.data;
-                const work = event.target;
-                if (data.id===2) {
-                    back(data.result);
-                    work.terminate();
-                }else if (data.error) {
-                    error(data.error);
-                    work.terminate();
-                }
-                if(data.method=='zip_password'){
-                    work.postMessage({
-                        id:data.id,
-                        result:false
-                    });
-                }
-            });
-            password = password?password:false;
-            work.postMessage({ method: 'unpack', id: 2, result: file, password});
-        });
-    }
     async hasItem(name) {
         return await this.callFunc('idb_hasItem', name);
     }
@@ -398,9 +367,6 @@ class WorkerApp {
         },
         complete(port){
             port.postMessage('complete');
-        },
-        async unpack(data,port){
-            return await this.unzip(data.result,data.password);
         }
     }));
 }

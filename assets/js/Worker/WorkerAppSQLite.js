@@ -1,5 +1,5 @@
 importScripts('../lib/WorkerApp.js');
-importScripts('../lib/MyWorker.js');
+//importScripts('../lib/MyWorker.js');
 importScripts('./SQLite3.js');
 const AppSQL = new class WorkerAppSQLite extends WorkerApp {
     constructor() {
@@ -282,11 +282,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 let json = this.database.selectOne('data',{id:data.result});
                 console.log(json);
                 return new Blob(['['+JSON.stringify(json)+']'],{type:'application/json'});
-            },
-            async unpack(data,port){
-                let result = await this.unzip(data.result,data.password);
-                console.log(result);
-                return result;
             }
         })
     );
