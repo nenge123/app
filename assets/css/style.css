@@ -109,6 +109,14 @@
     color: #000;
     cursor: pointer;
 }
+.video-play-ul2 li a{
+    display: block;
+    font-size: large;
+    text-decoration: none;
+    background-color: #000;
+    color: #fff;
+    padding: 3px 5px;
+}
 
 .window {
     padding: 5px;

@@ -29,7 +29,6 @@ class WorkerApp {
             if (result instanceof Promise) {
                 result = await result;
             }
-            this.feedback.delete(workerId);
             return result;
         }
     }
@@ -63,16 +62,12 @@ class WorkerApp {
         const port = e.source || e.target;
         if (data && data.constructor === Object) {
             if (await this.onMethodBack(data, port)) return;
-            if (this.onFeedBack(data, port)) return;
+            if (this.isFeedback(data.id)) {
+                this.callFeedback(data.id, data, port);
+                return true;
+            }
         }
         if (this.onMedthod instanceof Function) return this.onMedthod(data, port);
-    }
-    onFeedBack(data, port) {
-        const id = data.workerId || data.id;
-        if (this.isFeedback(id)) {
-            this.callFeedback(id, data, port);
-            return true;
-        }
     }
     async onMethodBack(data, port) {
         const method = data.method;
@@ -86,9 +81,6 @@ class WorkerApp {
                 if (data.id) {
                     port.postMessage({ id: data.id, result }, transf);
                 }
-                if (data.workerId) {
-                    port.postMessage({ workerId: data.workerId, result }, transf);
-                }
             }
             return true;
         }
@@ -98,15 +90,16 @@ class WorkerApp {
     }
     addFeedback(id, back, error) {
         this.feedback.set(id, function (data) {
-            if (data.error && error instanceof Function) return error(data.error);
-            if (back instanceof Function) return back(data.result);
+            this.feedback.delete(data.id);
+            if (data.error && error) return error(data.error);
+            back(data.result);
         });
     }
     async getFeedback(port, result, transf) {
         return new Promise((back, error) => {
-            const workerId = this.callFunc('uuid');
-            this.addFeedback(workerId, back, error);
-            result.workerId = workerId;
+            const id = this.callFunc('uuid');
+            this.addFeedback(id, back, error);
+            result.id = id;
             port.postMessage(result, transf);
         });
     }
@@ -147,16 +140,21 @@ class WorkerApp {
             work.addEventListener('message', event => {
                 const data = event.data;
                 const work = event.target;
-                if (data.workerId && data.password != undefined) {
-                    work.postMessage({ result: false, workerId: data.workerId });
-                } else if (data.ready === true) {
+                if (data.id==2) {
                     back(data.result);
-                } else if (data.error) {
+                }else if (data.error) {
                     error(data.error);
                     work.terminate();
                 }
+                if(data.method=='zip_password'){
+                    work.postMessage({
+                        id:data.id,
+                        result:false
+                    });
+                }
             });
-            work.postMessage({ method: 'unpack', id: 2, result: file, password, mode: true });
+            password = password?password:false;
+            work.postMessage({ method: 'unpack', id: 2, result: file, password});
         });
     }
     async hasItem(name) {
@@ -277,6 +275,8 @@ class WorkerApp {
                         headers: {
                             'Content-Length': file.size,
                             'content-type': file.type,
+                            'date':new Date().toGMTString(),
+                            'last-modified':new Date().toGMTString(),
                         }
                     }
                 )
@@ -389,7 +389,7 @@ class WorkerApp {
             this.js_root = self.location.href.split('/').slice(0, -2).join('/') + '/';
         },
         uuid() {
-            return crypto ? crypto.randomUUID() : btoa(performance.now() + Math.random());
+            return self.crypto&&self.crypto.randomUUID&&self.crypto.randomUUID()||btoa(performance.now()+Math.random());
         },
         async set_share_port(e, fn) {
             e.source.onmessage = e => this.onMessage(e);

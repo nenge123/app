@@ -56,12 +56,15 @@ self.addEventListener('message',async function(event){
     if(event.data=='close'){
         if(chunks.length){
             postMessage({
+                close:true,
                 PathIndex,
                 ready:'下载完成',
                 result:new Blob(chunks,{type:'video/mp2t'})
             });
         }
         return self.close();
+    }else if(typeof event.data !='string'){
+        return;
     }
     let url = event.data;
     const list = [];
@@ -193,9 +196,12 @@ self.addEventListener('message',async function(event){
         return
     };
     chunks.length&&postMessage({
-        ready:'下载完成',
         PathIndex,
         result:new Blob(chunks,{type:'video/mp2t'})
+    });
+    chunks.length&&postMessage({
+        ready:'下载完成',
+        close:true
     });
     self.close();
 });

@@ -53,11 +53,10 @@ class WorkerService{
         console.log(data,source);
     }
     onBack(data,port){
-        const workerId = data.workerId;
+        const id = data.id;
         const method = data.method;
-        if(this.isFeedback(workerId)){
-            this.callFeedback(workerId,data,port);
-            this.feedback.delete(workerId);
+        if(this.isFeedback(id)){
+            this.callFeedback(id,data,port);
             return true;
         }
         if(this.isMethod(method)){
@@ -67,15 +66,16 @@ class WorkerService{
     }
     addFeedback(id,back,error){
         this.feedback.set(id,function(data){
-            if(data.error&&error instanceof Function)return error(data.error);
-            if(back instanceof Function) return back(data.result);
+            this.feedback.delete(data.id);
+            if(data.error&&error)return error(data.error);
+            back(data.result);
         });
     }
     async getFeedback(port,result,transf){
         return new Promise((back,error)=>{
-            const workerId = this.uuid();
-            this.addFeedback(workerId,back,error);
-            result.workerId = workerId;
+            const id = this.uuid();
+            this.addFeedback(id,back,error);
+            result.id = id;
             port.postMessage(result,transf);
         });
     }

@@ -40,7 +40,11 @@ export default class MY_READER{
     readText(text){
         const voice = new SpeechSynthesisUtterance(text);
         voice.voice = this.VoiceList[this.getConfig('voiceIndex',0)];
-        speechSynthesis.speak(voice);
+        try{
+            speechSynthesis.speak(voice);
+        }catch(e){
+            speechSynthesis.resume();
+        }
     }
     voiceReplace = [
         ['Microsoft ',''],

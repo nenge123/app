@@ -52,13 +52,13 @@ export default class MY_VIDEO{
                     $.messager.progress();
                     for(const file of files){
                         const worker = await this.openSQL();
-                        console.log(await worker.getFeedback({
+                        await worker.getFeedback({
                             method:'importFile',
                             result:file,
                             mode:event.mode,
                             password:'IAM18',
                             tablelist:this.tablelist,
-                        }));
+                        })
                         worker.postMethod('exitworker');
                     }
                     $.messager.progress('close');
@@ -76,10 +76,9 @@ export default class MY_VIDEO{
     }
     async openSQL() {
         const worker = await new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true}).ready;
-        await worker.postMethod('setFile',this.sqlfile);
+        await worker.postMethod('setInfo',{datafile:this.sqlfile,tablelist:this.tablelist});
         if (!(await worker.postMethod('install', true))) {
-            await worker.postMethod('createList',this.tablelist);
-            await worker.postMethod('savedata')
+            await worker.postMethod('createList');
         }
         await worker.publicMethod();
         return worker;
@@ -185,7 +184,10 @@ export default class MY_VIDEO{
         video.hidden = false;
     }
     downUrl(url,arg,elm){
+        const V = this;
         this.StopEvent(arg);
+        if(elm.getAttribute('startdown'))return;
+        elm.setAttribute('startdown',true);
         let src = decodeURI(url);
         this.tsdown = new Worker(self.jspath + 'Worker/downTS.js');
         this.tsdown.addEventListener('message',function(event){
@@ -197,9 +199,21 @@ export default class MY_VIDEO{
                     elm.innerHTML = data.info;
                 }else if(data.result){
                     const href = URL.createObjectURL(data.result);
-                    elm.innerHTML = data.ready;
-                    N.downURL(href,elm.getAttribute('title')+'-片段('+data.PathIndex+').ts');
+                    let a = document.createElement('a');
+                    a.href = href;
+                    a.download = elm.getAttribute('title')+'-片段('+data.PathIndex+').ts';
+                    a.target = '_blank';
+                    a.innerHTML = '片段('+data.PathIndex+')';
+                    if(data.close){
+                        return a.click();
+                    }
+                    elm.parentNode.appendChild(a);
                     delete data.result;
+                }else if(data.close){
+                    elm.removeAttribute('startdown');
+                    if(data.ready)elm.innerHTML = data.ready;
+                    delete V.tsdown;
+                    this.terminate();
                 }
             }
         });

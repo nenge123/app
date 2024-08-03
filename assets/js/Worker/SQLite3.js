@@ -149,9 +149,6 @@ self.SQLite3Ready = new Promise(async back=>{
             let keys = typeof list === 'string' ? list : Array.from(Object.entries(list), s => '`' + s[0] + '` ' + s[1]).join(',');
             return this.exec(`CREATE TABLE IF NOT EXISTS \`${table}\` (${keys});`);
         }
-        createList(tablelist) {
-            return Array.from(Object.entries(tablelist) || [], e =>this.createTable(e[0],e[1]));
-        }
         resultTable() {
             let result = this.exec(this.str_select('sqlite_master','`name`')+this.str_where(['type']), ['table']);
             if (result[0]) {

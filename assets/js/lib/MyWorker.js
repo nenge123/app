@@ -1,8 +1,12 @@
 class MyWorker extends Worker{
     constructor(options){
-        if(!options||options.constructor!==Object)throw 'arguments must object {url,name}';
-        super(options.url,options);
-        if(options.install)this.ready = this.initMessage();
+        const {url,type,name} = options;
+        super(url,{type,name});
+        if(options.install===true){
+            this.ready = this.initMessage();
+        }else{
+            this.addMessage(options.message);
+        }
     }
     methods = new Map();
     feedback = new Map();
@@ -23,12 +27,13 @@ class MyWorker extends Worker{
         }
     }
     uuid(){
-        return crypto?crypto.randomUUID():btoa(performance.now()+Math.random());
+        return self.crypto&&self.crypto.randomUUID&&self.crypto.randomUUID()||btoa(performance.now()+Math.random());
     }
     addFeedback(id,back,error){
         this.feedback.set(id,function(data){
-            if(data.error&&error instanceof Function)return error(data.error);
-            if(back instanceof Function) return back(data.result);
+            this.feedback.delete(data.id);
+            if(data.error&&error)return error(data.error);
+            back(data.result);
         });
     }
     async getFeedback(result,transf){
@@ -49,7 +54,7 @@ class MyWorker extends Worker{
             this.methods.set(v,new Function('...result','return this.postMethod("'+v+'",result)'))
         });
     }
-    async addMessage(message,transf){
+    async addMessage(){
         this.addEventListener('message',async function(event){
             const data = event.data;
             const port = event.source || event.target;
@@ -57,9 +62,16 @@ class MyWorker extends Worker{
                 if(this.isMethod(data.method)){
                     return this.callMethod(data.method,data,port);
                 }
-                const id = data.workerId||data.id;
-                if(this.isFeedback(id)){
-                    return this.callFeedback(id,data,port);
+                if(this.isFeedback(data.id)){
+                    return this.callFeedback(data.id,data,port);
+                }
+                if(data.method=='zip_password'){
+                    let password = data.password||'';
+                    password = self.prompt instanceof Function?self.prompt('输入密码',password):false;
+                    return port.postMessage({
+                        id:data.id,
+                        result:password===null?false:password
+                    });
                 }
             }
             if (this.callMessage instanceof Function) return this.callMessage(data, port);
@@ -67,7 +79,6 @@ class MyWorker extends Worker{
         this.addEventListener('error',function(event){
             alert(event.message);
         });
-        if(message)this.postMessage(message,transf);
     }
     setMessage(fn,message,transf){
         if(fn instanceof Function) this.callMessage = fn;

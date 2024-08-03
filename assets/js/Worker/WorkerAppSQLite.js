@@ -17,9 +17,14 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
             isCreate(data, port) {
                 return this.database instanceof self.SQLite3;
             },
-            async setFile(data, port) {
-                this.datafile = data.result;
+            async setInfo(data, port) {
+                this.datafile = data.result.datafile;
+                this.tablelist = data.result.tablelist;
                 return await this.callMethod('isFile');
+            },
+            async createList(){
+                Array.from(Object.entries(this.tablelist) || [], e =>this.database.createTable(e[0],e[1]));
+                return await this.callMethod('savedata');
             },
             async isFile() {
                 return await this.cache_has(this.datafile);
@@ -118,24 +123,26 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 const mode = data.mode;
                 const tablelist = data.tablelist;
                 const password = data.password;
-                const mime = await (file.slice(0,2).text());
+                const mime =file instanceof Blob? await (file.slice(0,2).text()):new TextDecoder().decode(file.slice(0,2));
                 const keylist = Object.keys(tablelist.data);
+                let result;
                 if (mime == 'PK') {
                     const datas = await this.unzip(file,password);
                     if (datas && datas.size) {
                         for (let item of datas) {
-                            await this.callMethod('import_read_buf', item[1], mode, keylist);
+                            result = await this.callMethod('import_read_buf', item[1], mode, keylist);
                         }
                     }
                 } else {
-                    await this.callMethod('import_read_buf', new Uint8Array(await file.arrayBuffer()), mode, keylist);
+                    result = await this.callMethod('import_read_buf', new Uint8Array(file instanceof Blob ? await file.arrayBuffer():file), mode, keylist);
                 }
+                if(result) return result;
                 return await this.callMethod('savedata');
             },
             async import_read_buf(buf, mode, keylist) {
                 let mime = new TextDecoder().decode(buf.slice(0, 6));
                 if (mime == 'SQLite') {
-                    await this.cache_write(sqlfile, file, 'sqlite3');
+                    return await this.callFunc('cache_write',this.datafile, buf, 'sqlite3');
                 } else if (mime.charAt(0) == '{' || mime.charAt(0) == '[') {
                     let json = JSON.parse(new TextDecoder().decode(buf));
                     if (json && json.constructor === Object) {
@@ -222,7 +229,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 }
                 port.postMessage({
                     id:data.id,
-                    workerId:data.workerId,
                     result:{
                         total,
                         limit,
@@ -275,7 +281,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 html +='</ul>';
                 port.postMessage({
                     id:data.id,
-                    workerId:data.workerId,
                     result:html
                 });
                 this.callMethod('exitworker')
