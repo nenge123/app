@@ -128,7 +128,8 @@ self.N = new (class NengeCommon extends EventTarget{
         return worker.getFeedback({
             method:'unpack',
             result,
-            password
+            password,
+            close:true,
         });
     }
 
