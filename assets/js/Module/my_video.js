@@ -48,17 +48,20 @@ export default class MY_VIDEO{
                 $.messager.progress('close');
             break;
             case 'import':
+                const keylist = Object.keys(this.tablelist.data);
+                const insertkeys = event.mode === 1 ? keylist.slice(1) : keylist;
                 N.upload(async files => {
                     $.messager.progress();
                     for(const file of files){
                         const worker = await this.openSQL();
-                        await worker.getFeedback({
-                            method:'importFile',
-                            result:file,
-                            mode:event.mode,
-                            password:'IAM18',
-                            tablelist:this.tablelist,
-                        })
+                        const mime = await file.slice(0,2).text();
+                        if(mime==='PK'){
+                            const result = await N.unzip(file,'IAM18');
+                            await worker.getFeedback({method:'importFile',result,insertkeys})
+                        }else{
+                            const result2 = new Uint8Array(await file.arrayBuffer());
+                            await worker.getFeedback({method:'importFile',result:result2,insertkeys},[result2.buffer]);
+                        }
                         worker.postMethod('exitworker');
                     }
                     $.messager.progress('close');
@@ -73,6 +76,15 @@ export default class MY_VIDEO{
                 $('#video-window').window('open');
             break;
         }
+    }
+    async postFile(){
+        return await worker.getFeedback({
+            method:'importFile',
+            result:file,
+            mode:event.mode,
+            password:'IAM18',
+            tablelist:this.tablelist,
+        })
     }
     async openSQL() {
         const worker = await new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true}).ready;

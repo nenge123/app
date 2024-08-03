@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="result"></div>
+    <input id="upload" type="file">
+    <script type="module">
+import './assets/js/lib/MyWorker.js';
+let btn = document.querySelector('#upload');
+btn.onchange = async e=>{
+let files = e.target.files[0];
+const worker = new MyWorker({url:'./assets/js/Worker/WorkerAppSQLite.js?66'});
+let result = await worker.getFeedback({
+    method:'unpack',
+    result:files,
+});
+document.querySelector('#result').innerHTML = result&&Array.from(result.keys()).join(',');
+
+};
+
+    </script>
+</body>
+</html>

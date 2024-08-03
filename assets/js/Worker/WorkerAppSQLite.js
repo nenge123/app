@@ -1,5 +1,5 @@
 importScripts('../lib/WorkerApp.js');
-//importScripts('../lib/MyWorker.js');
+importScripts('../lib/MyWorker.js');
 importScripts('./SQLite3.js');
 const AppSQL = new class WorkerAppSQLite extends WorkerApp {
     constructor() {
@@ -120,26 +120,19 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
             },
             async importFile(data, port) {
                 const file = data.result;
-                const mode = data.mode;
-                const tablelist = data.tablelist;
-                const password = data.password;
-                const mime =file instanceof Blob? await (file.slice(0,2).text()):new TextDecoder().decode(file.slice(0,2));
-                const keylist = Object.keys(tablelist.data);
-                let result;
-                if (mime == 'PK') {
-                    const datas = await this.unzip(file,password);
-                    if (datas && datas.size) {
-                        for (let item of datas) {
-                            result = await this.callMethod('import_read_buf', item[1], mode, keylist);
-                        }
+                const insertkeys = data.insertkeys;
+                if(file instanceof Map){
+                    for(const buf of file){
+                        let result = await this.callMethod('import_read_buf',buf[1],insertkeys);
+                        if(result) return result;
                     }
-                } else {
-                    result = await this.callMethod('import_read_buf', new Uint8Array(file instanceof Blob ? await file.arrayBuffer():file), mode, keylist);
+                }else if(file instanceof Uint8Array){
+                    let result = await this.callMethod('import_read_buf',file,insertkeys);
+                    if(result) return result;
                 }
-                if(result) return result;
                 return await this.callMethod('savedata');
             },
-            async import_read_buf(buf, mode, keylist) {
+            async import_read_buf(buf, keylist) {
                 let mime = new TextDecoder().decode(buf.slice(0, 6));
                 if (mime == 'SQLite') {
                     return await this.callFunc('cache_write',this.datafile, buf, 'sqlite3');
@@ -148,19 +141,18 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     if (json && json.constructor === Object) {
                         json = Object.values(json);
                     }
-                    this.callMethod('import_readwrite_json', json, mode, keylist);
+                    this.callMethod('import_readwrite_json', json, keylist);
                 }
 
             },
-            import_readwrite_json(json, mode, keylist) {
-                let keys = mode === 1 ? keylist.slice(1) : keylist;
+            import_readwrite_json(json, keys) {
                 let sqlstr = 'INSERT INTO `data` (' + keys.map(v => '`' + v + '`').join(',') + ') VALUES (' + (keys.map(v => '?').join(',')) + ')';
                 for (let item of json) {
                     const sqlarr = [];
                     keys.forEach(v => {
                         sqlarr.push(item[v] || '')
                     });
-                    if (mode === 0 && item['id']) {
+                    if (item['id']&&keys[0]=='id') {
                         this.database.run('DELETE FROM `data` WHERE `id` = ?', [item['id']]);
                     }
                     this.database.run(sqlstr, sqlarr);
@@ -290,6 +282,11 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 let json = this.database.selectOne('data',{id:data.result});
                 console.log(json);
                 return new Blob(['['+JSON.stringify(json)+']'],{type:'application/json'});
+            },
+            async unpack(data,port){
+                let result = await this.unzip(data.result,data.password);
+                console.log(result);
+                return result;
             }
         })
     );

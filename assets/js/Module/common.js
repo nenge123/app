@@ -123,5 +123,13 @@ self.N = new (class NengeCommon extends EventTarget{
             height:200,    
         });
     }
+    unzip(result,password){
+        let worker = new MyWorker({url:self.jspath+'Worker/WorkerAppZip.js'});
+        return worker.getFeedback({
+            method:'unpack',
+            result,
+            password
+        });
+    }
 
 })(methods);

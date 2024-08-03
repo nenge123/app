@@ -140,8 +140,9 @@ class WorkerApp {
             work.addEventListener('message', event => {
                 const data = event.data;
                 const work = event.target;
-                if (data.id==2) {
+                if (data.id===2) {
                     back(data.result);
+                    work.terminate();
                 }else if (data.error) {
                     error(data.error);
                     work.terminate();

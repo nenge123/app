@@ -31,9 +31,9 @@ class MyWorker extends Worker{
     }
     addFeedback(id,back,error){
         this.feedback.set(id,function(data){
-            this.feedback.delete(data.id);
             if(data.error&&error)return error(data.error);
             back(data.result);
+            this.feedback.delete(data.id);
         });
     }
     async getFeedback(result,transf){
