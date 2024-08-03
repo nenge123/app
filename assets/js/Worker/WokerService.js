@@ -71,6 +71,9 @@ class WorkerService{
             back(data.result);
         });
     }
+    uuid() {
+        return self.crypto&&self.crypto.randomUUID&&self.crypto.randomUUID()||btoa(performance.now()+Math.random());
+    }
     async getFeedback(port,result,transf){
         return new Promise((back,error)=>{
             const id = this.uuid();
