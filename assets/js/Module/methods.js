@@ -13,11 +13,9 @@ export default new Map(Object.entries({
         let reader = document.querySelector('#reader');
         if(!reader){
             const {default:MY_READER} = await import('./my_reader.js'); 
-            self.myReader = new MY_READER('video-play-list');
+            self.myReader = new MY_READER;
             reader = await N.addTemplate('assets/template/reader-index.htm',!0);
             self.myReader.start();
-            const synth = window.speechSynthesis;
-            console.log(synth.pending,synth.getVoices());
         }
         $.mobile.nav('#mainpage','#reader');
     }

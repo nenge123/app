@@ -90,4 +90,7 @@ export default class MY_READER{
             requestAnimationFrame(func);
         });
     }
+    closeReader(){
+        $.mobile.nav('#reader','#mainpage','slide','right');
+    }
 }
