@@ -123,6 +123,9 @@ self.N = new (class NengeCommon extends EventTarget{
             height:200,    
         });
     }
+    /**
+     * 
+
     unzip(result,password){
         let worker = new MyWorker({url:self.jspath+'Worker/WorkerAppZip.js'});
         return worker.getFeedback({
@@ -131,6 +134,45 @@ self.N = new (class NengeCommon extends EventTarget{
             password,
             close:true,
         });
+    }
+    
+     */
+    async unzip(result,password){
+        await import('https://registry.npmmirror.com/@zip.js/zip.js/2.7.47/files/dist/zip.min.js');
+        let ReaderList = await new zip.ZipReader(
+            new zip.BlobReader(result instanceof Blob?result:new Blob([result]))
+        ).getEntries().catch(e=>false);
+        if(!ReaderList||!ReaderList.length) return false;
+        const getData = (entry)=>{
+            let rawPassword;
+            if(password){
+                rawPassword = password instanceof Uint8Array?password:new TextEncoder().encode(password);
+            }
+            return entry.getData(new zip.Uint8ArrayWriter(), {rawPassword:entry.encrypted?rawPassword:undefined}).catch(async e=>{
+                let msg = e.message;
+                if(password===false)return;
+                if(msg == zip.ERR_INVALID_PASSWORD||msg==zip.ERR_ENCRYPTED){
+                    password = window.prompt('输入密码',password instanceof Uint8Array ? new TextDecoder('gbk').decode(password):password);
+                    if(password){
+                        return await getData(entry);
+                    }else{
+                        password = false;
+                    }
+                }
+            });
+        }
+        if(ReaderList&&ReaderList.length){
+            let list = new Map();
+            for await(let entry of ReaderList){
+                if(entry.directory)continue;
+                let data = await getData(entry);
+                if(data){
+                    list.set(entry.filename,data);
+                }
+            }
+            return list;
+        }
+        return false;
     }
 
 })(methods);

@@ -10,21 +10,25 @@
     <div id="result"></div>
     <input id="upload" type="file">
     <script type="module">
+import 'https://registry.npmmirror.com/@zip.js/zip.js/2.7.47/files/dist/zip.min.js';
 import './assets/js/lib/MyWorker.js';
 let btn = document.querySelector('#upload');
 btn.onchange = async e=>{
 let files = e.target.files[0];
+
+const ReaderList = await new zip.ZipReader(new zip.BlobReader(files)).getEntries();
+let text = await ReaderList[0].getData(new zip.Uint8ArrayWriter());
+console.log(text);
+document.querySelector('#result').innerHTML = new TextDecoder().decode(text);
+return;
 const worker = new MyWorker({url:'./assets/js/Worker/WorkerAppZip.js?66'});
 let result = await worker.getFeedback({
     method:'unpack',
     result:files,
-    password:'IAM18'
 });
-                    for(const buf of result){
-                        console.log(buf);
-                    }
 console.log(result);
-document.querySelector('#result').innerHTML = result&&Array.from(result.keys()).join(',');
+alert(result.get('dqx.php').size);
+document.querySelector('#result').innerHTML = await result.get('dqx.php').text();
 
 };
 
