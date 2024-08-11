@@ -25,7 +25,25 @@ function get_path(str) {
     }
     return str;
 }
-function ajax(url,istext,progress){
+async function ajax(url,istext,progress){
+    const response = await fetch(url).catch(e=>undefined);
+    if(response){
+        const maxsize = parseInt(response.headers.get('content-length')||0);
+        const reader  = response.body.getReader();
+        const chunk = [];
+        let havesize = 0;
+        while(true){
+            const { done, value } = await reader.read();
+            if(done){
+                break;
+            }
+            havesize += value.byteLength;
+            progress(havesize,maxsize,value.byteLength);
+            chunk.push(value);
+        }
+        return await (new Blob(chunk)).arrayBuffer();
+    }
+    return new ArrayBuffer(0);
     return new Promise(back=>{
         let request = new XMLHttpRequest;
         request.addEventListener('readystatechange',function(event){
@@ -33,11 +51,11 @@ function ajax(url,istext,progress){
                 back(request.response);
             }
         });
-        let speed = 0;
+        request.speed = 0;
         progress instanceof Function&&request.addEventListener('progress',function(e){
-            if(!speed)speed = e.loaded;
-            else speed = e.loaded - speed;
-            progress(e.loaded, e.total,speed);
+            if(!request.speed)request.speed = e.loaded;
+            else request.speed = e.loaded - request.speed;
+            progress(e.loaded, e.total,request.speed);
         });
         request.responseType = istext?istext=='json'?'json':'text':'arraybuffer';
         request.open('GET',url);
@@ -73,7 +91,7 @@ self.addEventListener('message',async function(event){
     });
     url = get_path(url);
     console.log(url);;
-    let m3u8Text = await ajax(url,!0);
+    let m3u8Text = await (await this.fetch(url)).text();
     if(!m3u8Text){
         postMessage({
             info:'解析失败',
@@ -90,7 +108,7 @@ self.addEventListener('message',async function(event){
             for(let item of parser.manifest.playlists){
                 //if (item.attributes) Object.assign(ATTR, item.attributes);
                 let m3u8Url = get_path(item.uri);
-                let nextParser = new m3u8parser(await ajax(m3u8Url, !0));
+                let nextParser = new m3u8parser(await (await this.fetch(m3u8Url)).text());
                 if (nextParser.manifest.segments.length) {
                     list.push(...nextParser.manifest.segments.map(v => {
                         v.uri = get_path(v.uri);
@@ -107,7 +125,7 @@ self.addEventListener('message',async function(event){
         }else if(parser.lineStream&&parser.lineStream.buffer){
             let m3u8Url = get_path(parser.lineStream.buffer);
             m3u8Url = get_path(m3u8Url);
-            let nextParser = new m3u8parser(await ajax(m3u8Url, !0));
+            let nextParser = new m3u8parser(await (await this.fetch(m3u8Url)).text());
             if (nextParser.manifest.segments.length) {
                 list.push(...nextParser.manifest.segments.map(v => {
                     v.uri = get_path(v.uri);
@@ -144,6 +162,8 @@ self.addEventListener('message',async function(event){
     let AesIndex = {};
     let AesKEY = {};
     //postMessage({log:list});
+    //console.log(list);
+    let duration = 0;
     for(let frag of list){
         let databuf = await ajax(frag.uri,null,(loadsize,fullsize,chunksize)=>{
             let sd = '当前速率'+(chunksize/1024).toFixed(0)+'KB';
@@ -153,15 +173,18 @@ self.addEventListener('message',async function(event){
             });
         });
         if(databuf&&databuf.byteLength){
+            duration += parseFloat(frag.duration);
             if (frag.key&&frag.key.href) {
                 if(nowbuff!=frag.key.href&&chunks.length){
                     let result = new Blob(chunks,{type:'video/mp2t'});
                     postMessage({
                         ready:'下载完成',
                         PathIndex,
-                        result
+                        result,
+                        duration
                     });
                     chunks = [];
+                    duration = 0;
                     PathIndex+=1;
                 }
                 nowbuff = frag.key.href;
@@ -197,11 +220,8 @@ self.addEventListener('message',async function(event){
     };
     chunks.length&&postMessage({
         PathIndex,
-        result:new Blob(chunks,{type:'video/mp2t'})
-    });
-    chunks.length&&postMessage({
-        ready:'下载完成',
-        close:true
+        result:new Blob(chunks,{type:'video/mp2t'}),
+        duration
     });
     self.close();
 });

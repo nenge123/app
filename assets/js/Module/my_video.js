@@ -198,6 +198,9 @@ export default class MY_VIDEO{
         this.StopEvent(arg);
         if(elm.getAttribute('startdown'))return;
         elm.setAttribute('startdown',true);
+        const tips = document.createElement('h3');
+        tips.innerHTML = '苹果手机存在异常<br>因此请等待全部内容块下载完毕再点击片段下载!!!<br>正常情况下低于30秒可能为广告!';
+        elm.parentNode.appendChild(tips);
         let src = decodeURI(url);
         this.tsdown = new Worker(self.jspath + 'Worker/downTS.js');
         this.tsdown.addEventListener('message',function(event){
@@ -209,15 +212,19 @@ export default class MY_VIDEO{
                     elm.innerHTML = data.info;
                 }else if(data.result){
                     const href = URL.createObjectURL(data.result);
-                    let a = document.createElement('a');
+                    const p = document.createElement('p');
+                    const a = document.createElement('a');
+                    console.log(data.duration);
+                    const duration = data.duration? '约'+(data.duration>60?Math.ceil(data.duration/6)/10+'分':Math.ceil(data.duration)+'秒'):'';
+                    elm.parentNode.appendChild(p);
+                    p.appendChild(a);
                     a.href = href;
                     a.download = elm.getAttribute('title')+'-片段('+data.PathIndex+').ts';
                     a.target = '_blank';
-                    a.innerHTML = '片段('+data.PathIndex+')';
+                    a.innerHTML = '片段('+data.PathIndex+')'+duration;
                     if(data.close){
                         return a.click();
                     }
-                    elm.parentNode.appendChild(a);
                     delete data.result;
                 }else if(data.close){
                     elm.removeAttribute('startdown');
@@ -226,6 +233,9 @@ export default class MY_VIDEO{
                     this.terminate();
                 }
             }
+        });
+        this.tsdown.addEventListener('error',function(event){
+            elm.innerHTML = event.message;
         });
         this.tsdown.postMessage(src);
     }
