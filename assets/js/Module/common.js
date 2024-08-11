@@ -1,64 +1,7 @@
 import methods  from "./methods.js";
 import '../lib/MyWorker.js';
 self.jspath = import.meta.url.split('/').slice(0,-2).join('/')+'/';
-Object.assign(EventTarget.prototype, {
-    /**
-     * 绑定事件
-     * @param {*} evt 
-     * @param {*} fun 
-     * @param {*} opt 
-     * @returns 
-     */
-    on(evt, fun, opt) {
-        return this.addEventListener(evt, fun, opt), this;
-    },
-    /**
-     * 解绑事件
-     * @param {*} evt 
-     * @param {*} fun 
-     * @param {*} opt 
-     * @returns 
-     */
-    un(evt, fun, opt) {
-        return this.removeEventListener(evt, fun, opt), this;
-    },
-    /**
-     * 绑定一次事件
-     * @param {*} evt 
-     * @param {*} fun 
-     * @param {*} opt 
-     * @returns 
-     */
-    once(evt, fun, opt) {
-        return this.on(evt, fun, Object.assign({
-            passive: !1,
-            once: !0,
-        }, opt === true ? {
-            passive: !0
-        } : opt || {})), this;
-    },
-    /**
-     * 触发自定义事件
-     * @param {*} evt 
-     * @param {*} detail 
-     */
-    toEvent(evt, detail) {
-        return this.dispatchEvent(typeof evt == 'string' ? new CustomEvent(evt, {
-            detail
-        }) : evt), this;
-    }
-});
-self.N = new (class NengeCommon extends EventTarget{
-    callMethod(method,...arg){
-        if(this.isMethod(method))return this.methods.get(method).apply(this,arg);
-    }
-    isMethod(method){
-        return this.methods&&this.methods.has(method);
-    }
-    constructor(methods){
-        super();
-        this.methods = methods;
-    }
+self.N = new class NengeCommon{
     template(url){
         return new Promise((back,error)=>{
             const request = new XMLHttpRequest;
@@ -86,7 +29,7 @@ self.N = new (class NengeCommon extends EventTarget{
         let input = document.createElement('input');
         input.type = 'file';
         input.accept = accept;
-        input.on('change',e=>fn(e.target.files));
+        input.addEventListener('change',e=>fn(e.target.files));
         input.click();
     }
     postdown(action,param){
@@ -128,7 +71,7 @@ self.N = new (class NengeCommon extends EventTarget{
 
     unzip(result,password){
         let worker = new MyWorker({url:self.jspath+'Worker/WorkerAppZip.js'});
-        return worker.getFeedback({
+        return worker.getMessage({
             method:'unpack',
             result,
             password,
@@ -143,6 +86,7 @@ self.N = new (class NengeCommon extends EventTarget{
             new zip.BlobReader(result instanceof Blob?result:new Blob([result]))
         ).getEntries().catch(e=>false);
         if(!ReaderList||!ReaderList.length) return false;
+        [].shift
         const getData = (entry)=>{
             let rawPassword;
             if(password){
@@ -174,5 +118,29 @@ self.N = new (class NengeCommon extends EventTarget{
         }
         return false;
     }
+    methods = new Map;
+    modules = new Map();
+    has(name,method){
+        return this[name].has(method);
+    }
+    isMethod(method) {
+        return this.has('methods',method);
+    }
+    callMap(name,arg){
+        arg = Array.from(arg);
+        const method = arg.shift();
+        if(this.has(name,method)){
+            return this[name].get(method).apply(this,arg);
+        }
+    }
+    callMethod() {
+        return this.callMap('methods',arguments);
+    }
+    runModule(module,method,...arg){
+        if(this.modules.has(module)){
+            return this.modules.get(module)[method](...arg);
+        }
+    }
 
-})(methods);
+};
+self.N.methods = methods;

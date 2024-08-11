@@ -2,149 +2,119 @@ class WorkerApp {
     feedback = new Map;
     methods = new Map;
     shareports = [];
-    isLocal = /(127\.0\.0\.1|localhost|local\.nenge\.net)/.test(location.host) || /(cdn|npm)/.test(location.host);
     cache_name = 'cache-worker';
-    idb_name = 'worker-datas';
-    constructor(name) {
-        this.idb_table = name || 'files';
-        this.callFunc('get_root');
+    constructor(auto) {
+        if(auto!==true)this.onRun();
     }
-    isOrigin(url) {
-        return url.indexOf(location.origin) !== -1
+    has(name,method){
+        return this[name].has(method);
     }
     isMethod(method) {
-        return this.methods && this.methods.has(method);
-    }
-    callMethod(method, ...arg) {
-        if (this.isMethod(method)) {
-            return this.methods.get(method).apply(this, arg);
-        }
+        return this.has('methods',method);
     }
     isFeedback(method) {
-        return this.feedback && this.feedback.has(method);
+        return this.has('feedback',method);
     }
-    async callFeedback(method, ...arg) {
-        if (this.isFeedback(method)) {
-            let result = this.feedback.get(method).apply(this, arg);
-            if (result instanceof Promise) {
-                result = await result;
+    isFunc(method){
+        return this.has('functions',method);
+    }
+    callMap(name,arg){
+        arg = Array.from(arg);
+        const method = arg.shift();
+        if(this.has(name,method)){
+            return this[name].get(method).apply(this,arg);
+        }
+    }
+    callMethod() {
+        return this.callMap('methods',arguments);
+    }
+    callFeedback() {
+        return this.callMap('feedback',arguments);
+    }
+    callFunc() {
+        return this.callMap('functions',arguments);
+    }
+    setFeedBack(id, resolve, reject) {
+        this.feedback.set(id, function (data) {
+            if (data.error) {
+                reject(data.error);
+            } else {
+                resolve(data.result);
             }
-            return result;
+            this.feedback.delete(data.id);
+        });
+    }
+    addFeedBack(id) {
+        if (Promise.withResolvers) {
+            const {
+                promise,
+                resolve,
+                reject
+            } = Promise.withResolvers();
+            this.setFeedBack(id, resolve, reject);
+            return promise;
         }
-    }
-    callFunc(method, ...arg) {
-        const func = this.functions.get(method);
-        if (func instanceof Function) {
-            return func.apply(this, arg);
-        }
-        return func;
-    }
-    get state() {
-        return true;
-    }
-    set state(bool) {
-
+        return new Promise((resolve, reject) => this.setFeedBack(id, resolve, reject));
     }
     onRun() {
         if (self.postMessage) {
-            self.addEventListener('message', e => this.onMessage(e));
-            this.callFunc('onInitialized',()=>this.callFunc('complete',self));
+            self.onmessage = e => this.onMessage(e);
+            this.callMethod('_Initialized',e=>this.callFunc('onComplete',self));
         } else {
-            self.addEventListener('connect',e => this.callFunc('set_share_port', e));
+            self.addEventListener('connect',e => this.callFunc('sharePort', e));
         }
     }
-    /**
-     * @param {MessageEvent} e 
-     * @returns 
-     */
-    async onMessage(e) {
+    postMethod(port, result, method) {
+        return this.getMessage(port, { result, method });
+    }
+    getMessage(port,result, transf, id) {
+        if (typeof result == 'string') result = {method: result};
+        id = id ? id : this.callFunc('uuid');
+        result.id = id;
+        port.postMessage(result, transf);
+        return this.addFeedBack(id);
+    }
+    onMessage(e) {
         const data = e.data;
         const port = e.source || e.target;
-        if (data && data.constructor === Object) {
-            if (await this.onMethodBack(data, port)) return;
+        if (data && data.constructor === Object) {    
+            const method = data.method;        
+            if (this.isMethod(method)) {
+                const id = data.id;
+                const result = this.callMethod(method, data, port);
+                if(id){
+                    if(result instanceof Promise){
+                        return result.then(re=>this.onResult(port,re,id));
+                    }
+                    this.onResult(port,result,id);
+                }
+                return;
+            }
             if (this.isFeedback(data.id)) {
-                this.callFeedback(data.id, data, port);
-                return true;
+                return this.callFeedback(data.id, data, port);
             }
         }
-        if (this.onMedthod instanceof Function) return this.onMedthod(data, port);
+        if (this.callMessage instanceof Function) return this.callMessage(data, port);
     }
-    async onMethodBack(data, port) {
-        const method = data.method;
-        if (this.isMethod(method)) {
-            const result = await this.callMethod(method, data, port);
+    onResult(port,result,id){
+        if (result !== undefined) {
             const transf = [];
-            if (result !== undefined) {
-                if (result.byteLength) {
-                    transf.push(result.buffer || result);
-                }
-                if (data.id) {
-                    port.postMessage({ id: data.id, result }, transf);
-                }
+            if (result.byteLength) {
+                transf.push(result.buffer || result);
             }
-            return true;
+            port.postMessage({ id, result }, transf);
         }
     }
-    async getMessage(port, result, method) {
-        return await this.getFeedback(port, { result, method });
-    }
-    addFeedback(id, back, error) {
-        this.feedback.set(id, function (data) {
-            this.feedback.delete(data.id);
-            if (data.error && error) return error(data.error);
-            back(data.result);
-        });
-    }
-    async getFeedback(port, result, transf) {
-        return new Promise((back, error) => {
-            const id = this.callFunc('uuid');
-            this.addFeedback(id, back, error);
-            result.id = id;
-            port.postMessage(result, transf);
-        });
-    }
-    /**
-     * 写入内容
-     * @param {string} name 
-     * @param {*} contents 
-     * @param {string|undefined}} mime 
-     * @param {string|undefined} cachename
-     * @returns 
-     */
     async cache_write(name, contents, mime, cachename) {
         return await this.callFunc('cache_write', name, contents, mime, cachename);
     }
-    /**
-     * 读取内容
-     * @param {string} name 
-     * @param {string|undefined} type
-     * @param {string|undefined} cachename
-     * @returns 
-     */
     async cache_read(name, type, cachename) {
         return await this.callFunc('cache_read', name, type, cachename);
     }
     async cache_has(name, cachename) {
         return await this.callFunc('cache_has', name, cachename);
     }
-    async hasItem(name) {
-        return await this.callFunc('idb_hasItem', name);
-    }
-    async getItem(name) {
-        return await this.callFunc('idb_getItem', name);
-    }
-    async setItem(name, contents) {
-        return await this.callFunc('idb_setItem', name, contents);
-    }
     functions = new Map(Object.entries({
-        /**
-         * 写入内容
-         * @param {string} name 
-         * @param {*} contents 
-         * @param {string|undefined}} mime 
-         * @param {string|undefined} cachename
-         * @returns 
-         */
         async cache_write(name, contents, mime, cachename) {
             let type;
             switch (mime) {
@@ -166,13 +136,6 @@ class WorkerApp {
             }
             return this.callFunc('cache_put', name, new File([contents], name, { type }), cachename);
         },
-        /**
-         * 读取内容
-         * @param {string} name 
-         * @param {string|undefined} type
-         * @param {string|undefined} cachename
-         * @returns 
-         */
         async cache_read(name, type, cachename) {
             let response = await this.callFunc('cache_response', name, cachename);
             if (response instanceof Response) {
@@ -199,23 +162,10 @@ class WorkerApp {
         async cache_has(name, cachename) {
             return await this.callFunc('cache_response', name, cachename) instanceof Response ? true : false;
         },
-
-        /**
-         * 读取Response内容
-         * @param {string} name 
-         * @param {string|undefined} cachename
-         * @returns 
-         */
         async cache_response(name, cachename) {
             const cache = await this.callFunc('cache_open', cachename);
             return cache && cache.match(location.origin + '/' + name);
         },
-        /**
-         * 删除Response内容
-         * @param {string} name 
-         * @param {string|undefined} cachename
-         * @returns 
-         */
         async cache_remove(name, cachename) {
             const cache = await this.callFunc('cache_open', cachename);
             return cache ? cache.delete(location.origin + '/' + name) : false;
@@ -226,13 +176,6 @@ class WorkerApp {
                 return caches.open(cacheName);
             }
         },
-        /**
-         * 缓存储存 写入BLOB
-         * @param {string} name 
-         * @param {Blob} file 
-         * @param {string|undefined} cachename 
-         * @returns 
-         */
         async cache_put(name, file, cachename) {
             const cache = await await this.callFunc('cache_open', cachename, !0);
             return await cache.put(
@@ -252,120 +195,14 @@ class WorkerApp {
                 )
             ),true;
         },
-        async idb_open(version) {
-            if (this.idb instanceof Promise) return await this.idb;
-            if (!this.idb) {
-                this.idb = new Promise(resolve => {
-                    let req = indexedDB.open(this.idb_name, version);
-                    req.addEventListener("upgradeneeded", e => {
-                        const db = req.result;
-                        if (!db.objectStoreNames.contains(this.idb_table)) {
-                            const store = db.createObjectStore(this.idb_table);
-                            store.createIndex('timestamp', 'timestamp', { "unique": false });
-                        }
-                    }, { once: true });
-                    req.addEventListener('success', async e => {
-                        const db = req.result;
-                        if (!db.objectStoreNames.contains(this.idb_table)) {
-                            let version = db.version += 1;
-                            db.close();
-                            return resolve(await this.callFunc('idb_open', version));
-                        }
-                        return resolve(db);
-                    }, { once: true });
-                });
-            }
-            return this.idb;
-        },
-        async idb_selectStore(ReadMode) {
-            const db = await this.callFunc('idb_open');
-            const transaction = db.transaction([this.idb_table], ReadMode ? 'readonly' : "readwrite");
-            return transaction.objectStore(this.idb_table);
-        },
-        async idb_readyOnly() {
-            return this.callFunc('idb_selectStore', !0);
-        },
-        async idb_readyWrite() {
-            return this.callFunc('idb_selectStore');
-        },
-        async idb_readItem(name) {
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.callFunc('idb_readyOnly');
-                const request = transaction.get(name);
-                request.onsuccess = function () {
-                    resolve(this.result);
-                }
-                request.onerror = function (e) {
-                    reject(this.result);
-                }
-            });
-
-        },
-        async idb_hasItem(name) {
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.callFunc('idb_readyOnly');
-                const request = transaction.getKey(name);
-                request.onsuccess = function () {
-                    resolve(this.result == name);
-                }
-                request.onerror = function (e) {
-                    reject(this.result);
-                }
-            });
-        },
-        async idb_getItem(name) {
-            const result = await this.callFunc('idb_readItem', name);
-            return result && result.contents || result;
-        },
-        async idb_setItem(name, contents) {
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.callFunc('idb_readyWrite');
-                const request = transaction.put({ contents, timestamp: new Date }, name);
-                request.onsuccess = function () {
-                    resolve(this.result)
-                }
-                request.onerror = function (e) {
-                    reject(this.result);
-                }
-            });
-        },
-        async idb_removeItem(name) {
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.callFunc('idb_readyWrite');
-                const request = transaction.delete(name);
-                request.onsuccess = function () {
-                    resolve(this.result == name);
-                }
-                request.onerror = function (e) {
-                    reject(this.result);
-                }
-            });
-        },
-        async idb_fetch(url) {
-            let contents = await this.callFunc('getItem', url);
-            if (!contents) {
-                let response = await fetch(url);
-                if (response && response.status == 200) {
-                    contents = /\.wasm$/.test(url) ? new Uint8Array(await response.arrayBuffer()) : await response.blob();
-                    this.setItem(url, contents);
-                } else {
-                    throw 'file error';
-                }
-            }
-            return contents;
-        },
-        get_root() {
-            this.worker_root = self.location.href.split('/').slice(0, -1).join('/') + '/';
-            this.js_root = self.location.href.split('/').slice(0, -2).join('/') + '/';
-        },
         uuid() {
             return self.crypto&&self.crypto.randomUUID&&self.crypto.randomUUID()||btoa(performance.now()+Math.random());
         },
-        async set_share_port(e, fn) {
+        async sharePort(e, fn) {
             e.source.onmessage = e => this.onMessage(e);
-            this.callFunc('onInitialized',()=>this.callFunc('complete',e.source));
+            this.callMethod('_Initialized',()=>this.callFunc('onComplete',e.source));
         },
-        complete(port){
+        onComplete(port){
             port.postMessage('complete');
         }
     }));

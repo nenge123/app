@@ -28,7 +28,7 @@ async openSQL() {
         await worker.postMethod('createList',this.tablelist);
         await worker.postMethod('savedata')
     }
-    await worker.publicMethod();
+    await worker.setMethod();
     return worker;
 }
 
@@ -36,7 +36,7 @@ const worker = await this.openSQL(); // 创建并初始化
 console.log(worker.methods.key()); //所有方法 具体请看SQLite3.js
 console.log(await worker.callMethod('selectSQL','data')); //输出所有data数据
 
-await worker.getFeedback({
+await worker.getMessage({
     method:'importFile',
     result:file,//导入数据文件 SQLite3文件 或者 json 数据 支持zip压缩文件
     password:undefined,//可选 zip解压密码

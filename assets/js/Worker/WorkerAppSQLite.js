@@ -2,18 +2,13 @@ importScripts('../lib/WorkerApp.js');
 //importScripts('../lib/MyWorker.js');
 importScripts('./SQLite3.js');
 const AppSQL = new class WorkerAppSQLite extends WorkerApp {
-    constructor() {
-        super('sql-lite');
-        const App = this;
-        App.datafile = 'data.sqlite3';
-        App.functions.set('onInitialized', async function (back) {
-            await SQLite3Ready;
-            back(true);
-        });
-        App.onRun();
-    }
+    datafile = 'data.sqlite3';
     methods = new Map(
         Object.entries({
+            async _Initialized(back){
+                await SQLite3Ready;
+                back(true);
+            },
             isCreate(data, port) {
                 return this.database instanceof self.SQLite3;
             },
@@ -72,7 +67,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     }
                 })
             },
-            publicMethod() {
+            resultMethod() {
                 return Array.from(this.methods.keys()).filter(v=>v.indexOf('_')===-1);
             },
             async closeworker(data, port) {
@@ -86,9 +81,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
             async savedata(){
                 return await this.cache_write(this.datafile, this.database.export(), 'sqlite3')?true:false;
             },
-            database_close(){
-                this.database&&this.database.close();
-            },
             async save2exit(data, port) {
                 await this.callMethod('savedata');
                 this.callMethod('database_close');
@@ -97,7 +89,14 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     result: true
                 });
                 self.close();
-                throw 'close';
+            },
+            database_close(){
+                this.database&&this.database.close();
+                delete this.database;
+            },
+            exit_close() {
+                this.callMethod('database_close');
+                self.close();
             },
             async exitworker(data, port) {
                 this.callMethod('database_close');
@@ -106,7 +105,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     result: true
                 });
                 self.close();
-                throw 'close';
             },
             async clear2exit(data, port) {
                 await this.callFunc('cache_remove', this.datafile);
@@ -116,7 +114,6 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     result: true
                 });
                 self.close();
-                throw 'close';
             },
             async importFile(data, port) {
                 const file = data.result;
@@ -173,7 +170,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
             },
             Html2Video(data,port){
                 let {page,tag,search,limit,order,maxlength} = data.result;
-                let listHTML = '<form class="video-search" onsubmit="myVideo.SetSearch(this,arguments);"><input type="text" class="textbox" name="search" value="'+(search?search:'')+'"><button type="submit" class="l-btn">搜索</button><button type="button" class="l-btn" onclick="myVideo.ClearSet(this,arguments)">清除筛选</button></form>';
+                let listHTML = '<form class="video-search" onsubmit="N.runModule(\'myVideo\',\'SetSearch\',this,arguments);"><input type="text" class="textbox" name="search" value="'+(search?search:'')+'"><button type="submit" class="l-btn">搜索</button><button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'ClearSet\',this,arguments)">清除筛选</button></form>';
                 let sql = '';
                 let sqlarr = [];
                 let sqlparme = [];
@@ -199,7 +196,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     if(list&&list.length){
                         listHTML += '<h3 class="video-list-h3">视频列表</h3><ul class="video-list-ul">';
                         list.forEach(item=>{
-                            listHTML += `<li class="video-item l-btn"><div onclick="myVideo.OpenPlay('${item.id}',arguments,this)" title="${item.title.replace('"',"&quot;	")}">`;
+                            listHTML += `<li class="video-item l-btn"><div onclick="N.runModule(\'myVideo\',\'OpenPlay\','${item.id}',arguments,this)" title="${item.title.replace('"',"&quot;	")}">`;
                             listHTML += `<div><img src="${item.img}"/></div><p>${item.title}</p>`;
                             if(item.time){
                                 let time = new Date(parseInt(item.time*1000));
@@ -216,7 +213,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 if(taglist&&taglist.length){
                     listHTML +='<h3 class="video-tag-h3">标签云</h3><ul class="video-tag-ul">';
                     taglist.forEach(item=>{
-                        listHTML+=`<li class="video-tag-item"><span onclick="myVideo.SetTag('${encodeURI(item.name)}',arguments)">${item.name}(${item.num})</span></li>`;
+                        listHTML+=`<li class="video-tag-item"><span onclick="N.runModule(\'myVideo\',\'SetTag\','${encodeURI(item.name)}',arguments)">${item.name}(${item.num})</span></li>`;
                     });
                     listHTML +='</ul>';
                 }
@@ -231,7 +228,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                         pageHtml:this.callMethod('html_page_pagination',page,maxpage,maxlength)
                     }
                 });
-                this.callMethod('exitworker');
+                this.callMethod('exit_close');
             },
             html_page_pagination(page,maxpage,maxlengh){
                 maxlengh = maxlengh?maxlengh:8;
@@ -254,36 +251,39 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     }
                     if (maxlengh < 0) break;
                 }
-                let html = '<nav class="video-pagination"><span class="l-btn" onclick="myVideo.SetPage(1,arguments)" '+(page===1?'class="active"':'')+'>顶页</span>';
+                let html = '<nav class="video-pagination"><span class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',1,arguments)" '+(page===1?'class="active"':'')+'>顶页</span>';
                 leftnavs.concat(rightnavs).forEach(p=>{
-                    html += '<span class="l-btn" onclick="myVideo.SetPage('+p+',arguments)" '+(page===p?'class="active"':'')+'>'+p+'</span>';
+                    html += '<span class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\','+p+',arguments)" '+(page===p?'class="active"':'')+'>'+p+'</span>';
                 });
-                html +='<span class="l-btn" onclick="myVideo.SetPage('+maxpage+',arguments)" '+(page===maxpage?'class="active"':'')+'>末页</span></nav>';
+                html +='<span class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\','+maxpage+',arguments)" '+(page===maxpage?'class="active"':'')+'>末页</span></nav>';
                 return html;
             },
             Html2Play(data,port){
                 let item = this.database.selectOne('data',{id:data.result});
                 let html = '<h2>'+item.title+'</h3><video id="video-media" controls hidden></video><h3 class="video-play-h3">视频列表</h3><ul class="video-play-ul">';
                 item.url.split('||').forEach((url,index)=>{
-                    html += `<li><span onclick="myVideo.playUrl('${encodeURI(url)}',arguments)">第${index+1}集</span></li>`;
+                    html += `<li><span onclick="N.runModule(\'myVideo\',\'playUrl\','${encodeURI(url)}',arguments)">第${index+1}集</span></li>`;
                 });
                 html +='</ul><h3 class="video-play-h3">尝试下载(iPhone11+ios16,安卓11测试通过)</h3><p>下载视频将会是MPEG编码的TS视频,请使用多功能播放器播放!手机可能存在播放条时间异常(不能选段播放)!</p><ul class="video-play-ul2">';
                 item.url.split('||').forEach((url,index)=>{
-                    html += `<li><span onclick="myVideo.downUrl('${encodeURI(url)}',arguments,this)" title="${item.title.replace('"',"&quot;	")} - ${index+1}">下载第${index+1}集</span></li>`;
+                    html += `<li><span onclick="N.runModule(\'myVideo\',\'downUrl\','${encodeURI(url)}',arguments,this)" title="${item.title.replace('"',"&quot;	")} - ${index+1}">下载第${index+1}集</span></li>`;
                 });
                 html +='</ul>';
                 port.postMessage({
                     id:data.id,
                     result:html
                 });
-                this.callMethod('exitworker')
+                this.callMethod('exit_close')
             },
             exportJSON(data,port){
                 console.log(data);
                 let json = this.database.selectOne('data',{id:data.result});
-                console.log(json);
                 return new Blob(['['+JSON.stringify(json)+']'],{type:'application/json'});
             }
         })
     );
+    constructor(){
+        super(true);
+    }
 }
+AppSQL.onRun();

@@ -56,9 +56,9 @@ export default class MY_VIDEO{
                         const worker = await this.openSQL();
                         const mime = await file.slice(0,2).text();
                         if(mime==='PK'){
-                            await worker.getFeedback({method:'importFile',result:await N.unzip(file,'IAM18'),insertkeys})
+                            await worker.getMessage({method:'importFile',result:await N.unzip(file,'IAM18'),insertkeys})
                         }else{
-                            await worker.getFeedback({method:'importFile',result:new Uint8Array(await file.arrayBuffer()),insertkeys});
+                            await worker.getMessage({method:'importFile',result:new Uint8Array(await file.arrayBuffer()),insertkeys});
                         }
                         worker.postMethod('exitworker');
                     }
@@ -76,7 +76,7 @@ export default class MY_VIDEO{
         }
     }
     async postFile(){
-        return await worker.getFeedback({
+        return await worker.getMessage({
             method:'importFile',
             result:file,
             mode:event.mode,
@@ -85,12 +85,13 @@ export default class MY_VIDEO{
         })
     }
     async openSQL() {
-        const worker = await new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true}).ready;
+        const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true});
+        await worker.ready;
         await worker.postMethod('setInfo',{datafile:this.sqlfile,tablelist:this.tablelist});
         if (!(await worker.postMethod('install', true))) {
             await worker.postMethod('createList');
         }
-        await worker.publicMethod();
+        await worker.setMethod();
         return worker;
     }
     async getList(arg){
@@ -103,7 +104,6 @@ export default class MY_VIDEO{
         let result = await worker.postMethod('Html2Video',arg);
         bodyElm.innerHTML = result.html;
         footerElm.innerHTML = result.pageHtml;
-        worker.terminate();
         bodyElm.style.opacity = '';
     }
     StopEvent(arg){

@@ -1,10 +1,6 @@
 importScripts('../lib/WorkerApp.js');
-importScripts('https://registry.npmmirror.com/@zip.js/zip.js/2.7.47/files/dist/zip.min.js');
+importScripts('https://registry.npmmirror.com/@zip.js/zip.js/2.7.42/files/dist/zip.min.js');
 new class WorkerAppZip extends WorkerApp {
-    constructor() {
-        super('zip-worker');
-        this.onRun();
-    }
     /**
      * 创建GB2312编码集
      * @returns 
@@ -67,90 +63,89 @@ new class WorkerAppZip extends WorkerApp {
         }
         return new Uint8Array(buf);
     }
-    onMedthod(data, port) {
-        if (data instanceof Array || data && data.constructor === Object) {
-            return this.callMethod('toblob', data, port);
-        } else if (data && data.buffer || data instanceof Blob || data instanceof Uint8Array) {
-            return this.callMethod('unpack', data, port);
+    async get_data(entry,port){
+        const notUTF8 = entry.filenameUTF8 == false;
+        let rawPassword;
+        let password = this.password;
+        if (entry.encrypted) {
+            if (password) {
+                if (password instanceof ArrayBuffer||password instanceof Uint8Array){
+                    password = new Uint8Array(password);
+                    rawPassword = password;
+                }else{
+                    rawPassword = notUTF8 ? this.GB_encode(password):new TextEncoder().encode(password)
+                }
+            }
         }
+        let options =  {
+            rawPassword,
+            onprogress: (current, total) => port.postMessage({method:'zip_progress', current, total, file: entry.filename })
+        };
+        return entry.getData(new zip.Uint8ArrayWriter(),options).catch(async e=>{
+            let msg = e.message;
+            if (password === false) return;
+            if (msg == zip.ERR_INVALID_PASSWORD || msg == zip.ERR_ENCRYPTED) {
+                if (password instanceof Uint8Array) password = new TextDecoder('gbk').decode(password);
+                password = await this.getMessage(port, { method: 'zip_password', result: password || '' });
+                if (password) {
+                    if (notUTF8) password = this.GB_encode(password);
+                    this.password = password;
+                    return await this.get_data(entry,port);
+                } else {
+                    this.password = false;
+                }
+            }
+        });
+    }
+    async unpack(data, port) {
+        let { result, password, id, encode, each,close} = data;
+        this.password = password;
+        const ReaderList = await new zip.ZipReader(new zip.BlobReader(result instanceof Blob ? result : new Blob([result]))).getEntries({
+            decodeText(buf, encoding) {
+                let text = new TextDecoder('utf-8').decode(buf);
+                let newbuf = new TextEncoder().encode(text);
+                return newbuf.byteLength > buf.byteLength ? new TextDecoder('gb18030').decode(buf) : text;
+            }
+        }).catch(e => null);
+        if (ReaderList&&ReaderList.length) {
+            let newresult = [];
+            let buffers = [];
+            for (let entry of ReaderList) {
+                if (entry.directory) continue;
+                let data = await this.get_data(entry,port);
+                if (data) {
+                    if(!each){
+                        newresult.push([entry.filename,data]);
+                        buffers.push(data.buffer);
+                    }else{
+                        port.postMessage({
+                            method:'zip_file',
+                            result: data,
+                            file: entry.filename,
+                        }, [data.buffer]);
+                    }
+                }
+            }
+            if(newresult.length){
+                port.postMessage({
+                    result: new Map(newresult),
+                    ready: true,
+                    id
+                }, buffers);
+            }
+        }else{
+            port.postMessage({
+                result: false,
+                ready: true,
+                id
+            });
+        }
+        if(close)port.close();
     }
     methods = new Map(
         Object.entries({
             async unpack(data, port) {
-                let { result, password, id, encode, each,close} = data;
-                const ReaderList = await new zip.ZipReader(new zip.BlobReader(result instanceof Blob ? result : new Blob([result]))).getEntries({
-                    decodeText(buf, encoding) {
-                        let text = new TextDecoder('utf-8').decode(buf);
-                        let newbuf = new TextEncoder().encode(text);
-                        return newbuf.byteLength > buf.byteLength ? new TextDecoder('gb18030').decode(buf) : text;
-                    }
-                }).catch(e => null);
-                if (ReaderList&&ReaderList.length) {
-                    const getData = (entry) => {
-                        let rawPassword;
-                        if (entry.encrypted) {
-                            if (password) {
-                                if (password instanceof ArrayBuffer) password = new Uint8Array(password);
-                                rawPassword = password instanceof Uint8Array ? password : entry.filenameUTF8 == false ? this.GB_encode(password) : undefined;
-                            }
-                        }
-                        return entry.getData(new zip.Uint8ArrayWriter(), {
-                            rawPassword,
-                            password: password && !rawPassword && entry.encrypted ? password : undefined,
-                            onprogress: (current, total) => port.postMessage({method:'zip_progress', current, total, file: entry.filename })
-                        }).catch(async e => {
-                            let msg = e.message;
-                            if (password === false) return;
-                            if (msg == zip.ERR_INVALID_PASSWORD || msg == zip.ERR_ENCRYPTED) {
-                                if (password instanceof Uint8Array) password = new TextDecoder('gbk').decode(password);
-                                password = await this.getFeedback(port, { method: 'zip_password', result: password || '' });
-                                if (password) {
-                                    if (entry.filenameUTF8 == false) password = this.GB_encode(password);
-                                    return await getData(entry);
-                                } else {
-                                    password = false;
-                                }
-                            }
-                        });
-                    }
-                    if (!each) {
-                        let newresult = [];
-                        let buffers = [];
-                        for (let entry of ReaderList) {
-                            if (entry.directory) continue;
-                            let data = await getData(entry);
-                            if (data) {
-                                newresult.push([entry.filename,data]);
-                                buffers.push(data.buffer);
-                            }
-                        }
-                        port.postMessage({
-                            result: new Map(newresult),
-                            ready: true,
-                            id
-                        }, buffers);
-                    } else {
-                        for (let entry of ReaderList) {
-                            if (entry.directory) continue;
-                            let data = await getData(entry);
-                            if (data) {
-                                port.postMessage({
-                                    method:'zip_file',
-                                    result: data,
-                                    file: entry.filename,
-                                }, [data.buffer]);
-                            }
-                        }
-                        port.postMessage({result: true,id});
-                    }
-                }else{
-                    port.postMessage({
-                        result: false,
-                        ready: true,
-                        id
-                    });
-                }
-                if(close)port.close();
+                return this.unpack(data,port);
             },
             async toblob(data, port) {
                 let { result, password, id, encode, filename } = data;
@@ -202,7 +197,7 @@ new class WorkerAppZip extends WorkerApp {
                 let file = new File([await zipFileWriter.getData()], filename + '.zip', { type: 'application/x-zip-compressed' });
                 port.postMessage({ result: file, id: data.id }, [file]);
             },
-            publicMethod() {
+            resultMethod() {
                 return ['upack', 'toblob', 'open', 'add', 'close'];
             }
 

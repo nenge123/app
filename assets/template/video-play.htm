@@ -2,10 +2,10 @@
     <header>
         <div class="m-toolbar">
             <div class="m-title">视频播放</div>
-            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:e=>myVideo.ClosePlay()">返回</button>
+            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:e=>N.runModule('myVideo','ClosePlay')">返回</button>
             </div>
             <div class="m-right">
-                <button class="easyui-linkbutton" onclick="myVideo.exportJSON()" data-options="iconCls:'icon-redo'">导出数据</button>
+                <button class="easyui-linkbutton" onclick="N.runModule('myVideo','exportJSON')" data-options="iconCls:'icon-redo'">导出数据</button>
             </div>
         </div> 
     </header>

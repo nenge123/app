@@ -15,20 +15,19 @@ import './assets/js/lib/MyWorker.js';
 let btn = document.querySelector('#upload');
 btn.onchange = async e=>{
 let files = e.target.files[0];
-
+/*
 const ReaderList = await new zip.ZipReader(new zip.BlobReader(files)).getEntries();
 let text = await ReaderList[0].getData(new zip.Uint8ArrayWriter());
 console.log(text);
 document.querySelector('#result').innerHTML = new TextDecoder().decode(text);
 return;
+*/
 const worker = new MyWorker({url:'./assets/js/Worker/WorkerAppZip.js?66'});
-let result = await worker.getFeedback({
-    method:'unpack',
-    result:files,
-});
+let result = await worker.postMethod('unpack',files);
 console.log(result);
-alert(result.get('dqx.php').size);
-document.querySelector('#result').innerHTML = await result.get('dqx.php').text();
+Array.from(result.keys).join(',')
+//alert(result.get('dqx.php').size);
+//document.querySelector('#result').innerHTML = await result.get('dqx.php').text();
 
 };
 

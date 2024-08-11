@@ -2,13 +2,13 @@
     <header>
         <div class="m-toolbar">
             <div class="m-title">视频观看</div>
-            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:()=>myVideo.closeVideo()">返回</button>
+            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:()=>N.runModule('myVideo','closeVideo')">返回</button>
             </div>
             <div class="m-right">
                 <button class="easyui-menubutton" id="video-import" data-options="menu:'#video-menu-list',iconCls:'icon-save'">管理</button>
             </div>
         </div>
-        <div id="video-menu-list"  class="easyui-menu" data-options="onClick:e=>myVideo.ManageEvent(e)" style="width:150px;">   
+        <div id="video-menu-list"  class="easyui-menu" data-options="onClick:e=>N.runModule('myVideo','ManageEvent',e)" style="width:150px;">   
             <div data-options="iconCls:'icon-undo',method:'import',mode:0">覆盖数据库</div>  
             <div data-options="iconCls:'icon-undo',method:'import',mode:1">追加数据库</div>   
             <div data-options="iconCls:'icon-redo',method:'export'">分享数据库</div>
