@@ -157,7 +157,6 @@ export default class MY_VIDEO{
         const worker = await this.openSQL();
         bodyElm.innerHTML = await worker.postMethod('Html2Play',id);
         bodyElm.style.opacity = '';
-        this.mediaID = id;
         this.mediaTitle = elm.getAttribute('title');
         $('#video').navpanel('body')[0].classList.remove('noevent');
         $.mobile.nav('#video','#video-play');
@@ -166,10 +165,11 @@ export default class MY_VIDEO{
         if(this.hls){
             this.hls.destroy();
             delete this.hls;
-        }
-        if(this.video){
-            if(!this.video.paused)this.video.pause();
-            delete this.video;
+        }else{
+            let video = document.querySelector('#video-media');
+            if(video&&video.paused){
+                video.pause();
+            }
         }
         if(this.tsdown){
             this.tsdown.postMessage('close');
@@ -209,20 +209,19 @@ export default class MY_VIDEO{
         this.closeCaiji();
 
     }
-    async exportJSON(){
-        if(this.mediaID){
+    async exportJSON(mediaID){
+        if(mediaID){
             const worker = await this.openSQL();
-            let blob  = await worker.postMethod('exportJSON',this.mediaID);
+            let blob  = await worker.postMethod('exportJSON',mediaID);
             const href = URL.createObjectURL(blob);
             N.downURL(href,this.mediaTitle+'.json');
             URL.revokeObjectURL(href);
         }
     }
-    async deleteJSON(){
-        if(this.mediaID){
+    async deleteJSON(mediaID){
+        if(mediaID){
             const worker = await this.openSQL();
-            await worker.postMethod('deleteJSON',this.mediaID)
-            this.mediaID = null;
+            await worker.postMethod('deleteJSON',mediaID);
             this.ClosePlay();
             this.getList(this.playdata);
         }
@@ -235,7 +234,6 @@ export default class MY_VIDEO{
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
             video.addEventListener('canplay', function () {this.play();},{once:true});
-            this.video = video;
         }else{
             if(!self.Hls)await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
             if(Hls.isSupported()){

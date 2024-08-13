@@ -218,7 +218,7 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                     });
                     listHTML2 +='</ul>';
                     listHTML3 +='</ul>';
-                    listHTML += '</ul>'+listHTML2+listHTML3;
+                    listHTML += '</ul><br><br><br><br><br><br><br><br><br>'+listHTML3+listHTML2;
                 }
                 port.postMessage({
                     id: data.id,
@@ -283,8 +283,10 @@ const AppSQL = new class WorkerAppSQLite extends WorkerApp {
                 });
                 html2 += '</ol>';
                 html += '</ol>';
-                html += '<div><video id="video-media" controls poster="'+item.img+'"></video></div>';
+                html += '<div><video id="video-media" controls poster="'+item.img+'" hidden></video></div>';
                 html += html2;
+                html += `<br><br><br><br><div class="ul-grid">
+                <p class="p-block"><span onclick="N.runModule('myVideo','exportJSON',${item.id})">导出数据</span></p><p class="p-block"><b onclick="N.runModule('myVideo','deleteJSON',${item.id})">删除数据</b><p></div>`;
                 port.postMessage({
                     id: data.id,
                     result: html
