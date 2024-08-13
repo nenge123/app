@@ -3,6 +3,7 @@ class WorkerService extends WorkerApp{
     name     = 'worker-service';
     cache_files = 'cache-files';
     cache_cdn   = 'cdn-files';
+    no_cache = {'Cache-Control':'no-cache,max-age=0,must-revalidate'};
     onRun(){
         self.addEventListener('fetch',e=>this.onFetch(e));
         self.addEventListener('install',e=>e.waitUntil(this.onInstall(e)));
@@ -17,11 +18,13 @@ class WorkerService extends WorkerApp{
             switch(true){
                 case urlinfo.hostname == "registry.npmmirror.com":
                 case urlinfo.hostname == "unpkg.com":
-                case urlinfo.origin === this.npmcdn:
+                case urlinfo.hostname == 'lishijieacg.co':
+                case urlinfo.hostname == 'www.ikdmjx.com':
+                case urlinfo.origin == this.npmcdn:
                     return event.respondWith(this.getResponse(request,this.cache_cdn,false));
                 break;
                 default:
-                    return this.callMethod('fetch_cross_other',event);
+                    return this.callMethod('fetch_cross_other',event,urlinfo.hostname,urlinfo.origin)||false;
                 break;
             }
         })
@@ -60,14 +63,9 @@ class WorkerService extends WorkerApp{
     }
     async MatchCache(request,cache,update){
         let response = await cache.match(request);
-        if(self.navigator.onLine&&update&&response){
-            if(this.datetext&&this.datetext>this.formatTime(response)){
-                response = null;
-            }
-        }
         if(update&&!response){
-            response = await fetch(request,{cache:'reload'});
-            cache.put(request,response.clone());
+            response = await fetch(request,{headers:this.no_cache});
+            await cache.put(request,response.clone());
         }
         return response;
     }

@@ -11,10 +11,14 @@ Object.entries({
             }
         }else if(request.method=='GET'){
             const url = request.url.replace(location.origin,'').split('#')[0];
+            const control = request.headers.get('cache-control')||'';
             switch(true){
+                case control.indexOf('no-cache')!=-1||control.indexOf('max-age=0')!=-1:{
+                    response = fetch(request,{headers:this.no_cache});
+                }
                 case url.indexOf('/assets/') !==-1:
                 case request.headers.get('ajax-fetch')!=null:
-                    response = this.getResponse(request,this.cache_files,false);
+                    response = this.getResponse(request,this.cache_files,true);
                     //if(location.hostname == 'local.nenge.net'){
                     //    response = fetch(request,{cache:'no-cache'});
                     //}else{
@@ -55,12 +59,14 @@ Object.entries({
                     case url.indexOf('/assets/template/') !==-1:
                     case url.indexOf('/assets/js/')  !==-1:{
                         const modified = response.headers.get("last-modified");
-                        const response2 = await fetch(response.url,{method:'HEAD',cache:'no-cache'});
+                        const response2 = await fetch(response.url,{method:'HEAD',headers:this.no_cache});
                         if(response2){
                             const modified2 = response2.headers.get("last-modified");
                             if(modified!=modified2){
-                                const response3 = await fetch(response.url,{cache:'no-cache'});
-                                return await cache.put(response.url,response3);
+                                const response3 = await fetch(response.url,{headers:this.no_cache});
+                                await cache.put(response.url,response3);
+                                console.log(response3);
+                                return;
                             }
                         }else{
                             return await cache.delete(response.url);
@@ -68,6 +74,7 @@ Object.entries({
                         break;
                     }
                 }
+                return true;
             }));
         }
         return true;

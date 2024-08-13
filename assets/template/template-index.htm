@@ -25,27 +25,29 @@
 </head>
 <body>
     <div id="mainpage" title="能哥网" class="easyui-navpanel" data-options="maximized:true">
-        <header>
+        <header style="background: linear-gradient(to bottom, #ffffff9e 0, #d9caca1c 100%);border-color: #8f8f8f;box-shadow: 0px 1px 8px #0000007d;color: #2532e7;">
             <div class="m-toolbar">
                 <div class="m-title">能哥网</div>
             </div>
         </header>
         <ul class="list">
             <li>
-                <div class="easyui-linkbutton" data-options="onClick:e=>N.callMethod('openVideo')" title="在线视频">
+                <div class="btn-block" onclick="N.callMethod('openVideo')" title="在线视频">
                     <img src="/assets/images/icon-video.svg">
                     <p>在线视频</p>
                 </div>
             </li>
             <li>
-                <div class="easyui-linkbutton" data-options="onClick:e=>N.callMethod('refresh',e)" title="刷新脚本">
+                <div class="btn-block" onclick="N.callMethod('refresh')" title="刷新脚本">
                     <img src="/assets/images/icon-refresh.svg">
                     <p>刷新脚本</p>
                 </div>
             </li>
         </ul>
         <footer>
-            资源数据来自于网络,如有冒犯请及时告知! 当前缓存版本2024-08-11 22:17
+            <p class="p-block"><span>资源数据来自于网络,如有冒犯请及时告知!</span></p>
+            <p class="p-block"><span>当前缓存版本</span><b>2024-08-11 22:17</b></p>
+            <p class="p-block"><a href="https://github.com/nenge123/app/" target="_blank">源代码</a></p>
         </footer>
     </div>
     <div id="other"></div>

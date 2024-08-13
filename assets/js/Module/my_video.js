@@ -1,4 +1,5 @@
 export default class MY_VIDEO{
+    maxpage = 0;
     sqlfile = 'my-video.sqlite3';
     tablelist =  {
         data: {
@@ -73,16 +74,13 @@ export default class MY_VIDEO{
                 }
                 $('#video-window').window('open');
             break;
+            case 'caiji':
+                this.caiji = await N.addTemplate('assets/template/video-caiji.htm',!0);
+                $.mobile.nav('#video','#video-caiji');
+                let url = localStorage.getItem('video-caiji-url');
+                if(url)$('#video-caiji-url').val(url)
+            break;
         }
-    }
-    async postFile(){
-        return await worker.getMessage({
-            method:'importFile',
-            result:file,
-            mode:event.mode,
-            password:'IAM18',
-            tablelist:this.tablelist,
-        })
     }
     async openSQL() {
         const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true});
@@ -100,11 +98,14 @@ export default class MY_VIDEO{
         bodyElm.style.opacity = '0.1';
         const worker = await this.openSQL();
         arg = arg?arg:this.playdata;
-        arg.maxlength = 8;
+        arg.maxlength = 10;
+        arg.limit = 30;
         let result = await worker.postMethod('Html2Video',arg);
+        this.maxpage = result.maxpage;
         bodyElm.innerHTML = result.html;
         footerElm.innerHTML = result.pageHtml;
         bodyElm.style.opacity = '';
+        $('#video')[0].scrollTop = 0;
     }
     StopEvent(arg){
         if(arg&&arg[0]){
@@ -130,19 +131,28 @@ export default class MY_VIDEO{
         this.StopEvent(arg);
         this.setdata({tag,page:1});
     }
+    async DelTag(tag,arg){
+        tag = decodeURI(tag);
+        this.StopEvent(arg);
+        const worker = await this.openSQL();
+        await worker.postMethod('deleteTag',tag);
+        this.setdata();
+    }
+    async exportTag(tag,arg){
+        tag = decodeURI(tag);
+        this.StopEvent(arg);
+        const worker = await this.openSQL();
+        let blob = await worker.postMethod('exportTag',tag);
+        const href = URL.createObjectURL(blob);
+        N.downURL(href,tag+'.json');
+        URL.revokeObjectURL(href);
+
+    }
     async OpenPlay(id,arg,elm){
         this.StopEvent(arg);
         $('#video').navpanel('body')[0].classList.add('noevent');
-        let videoplay = document.querySelector('#video-play');
-        if(!videoplay){
-            //https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js
-            //await import('../hls.js');
-            await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
-            let videoplay = await N.template('assets/template/video-play.htm');
-            document.body.appendChild(videoplay);
-            $.parser.parse();
-        }
-        const bodyElm = $('#video-play').navpanel('body')[0];
+        let videoplay = await N.addTemplate('assets/template/video-play.htm',!0);
+        const bodyElm = $(videoplay).navpanel('body')[0];
         bodyElm.style.opacity = '0.1';
         const worker = await this.openSQL();
         bodyElm.innerHTML = await worker.postMethod('Html2Play',id);
@@ -157,15 +167,47 @@ export default class MY_VIDEO{
             this.hls.destroy();
             delete this.hls;
         }
+        if(this.video){
+            if(!this.video.paused)this.video.pause();
+            delete this.video;
+        }
         if(this.tsdown){
             this.tsdown.postMessage('close');
             delete this.tsdown;
         }
-        $('#video-play').navpanel('body')[0].innerHTML = '<div class="panel-loading">Loading...</div>';
         $.mobile.nav('#video-play','#video','slide','right');
+        $('#video-play').navpanel('destroy');
     }
     closeVideo(){
         $.mobile.nav('#video','#mainpage','slide','right');
+    }
+    closeCaiji(){
+        $.mobile.nav('#video-caiji','#video','slide','right');
+        $('#video-caiji').navpanel('destroy')
+    }
+    async startCaiji(elm){
+        if(elm.disabled)return;
+        elm.disabled = true;
+        $('#video-end-caiji')[0].disabled = false;
+        const worker = await this.openSQL();
+        worker.callMessage = function(data,port){
+            console.log(data);
+            if(typeof data === 'string'){
+                $('#video-caiji-log')[0].value += '\n'+data;
+            }
+        }
+        $('#video-end-caiji').on('click',async function(){
+            await worker.postMethod('save2exit');
+            $.mobile.nav('#video-caiji','#video','slide','right');
+            $('#video-caiji').navpanel('destroy')
+        });
+        let url = $('#video-caiji-url').val();
+        let page = $('#video-caiji-page').val();
+        page = page?parseInt(page):1;
+        if(url)localStorage.setItem('video-caiji-url',url);
+        alert(await worker.postMethod('caiji',{url,page}));
+        this.closeCaiji();
+
     }
     async exportJSON(){
         if(this.mediaID){
@@ -176,14 +218,26 @@ export default class MY_VIDEO{
             URL.revokeObjectURL(href);
         }
     }
-    playUrl(url,arg){
+    async deleteJSON(){
+        if(this.mediaID){
+            const worker = await this.openSQL();
+            await worker.postMethod('deleteJSON',this.mediaID)
+            this.mediaID = null;
+            this.ClosePlay();
+            this.getList(this.playdata);
+        }
+
+    }
+    async playUrl(url,arg){
         this.StopEvent(arg);
         let src = decodeURI(url);
         let video = document.querySelector('#video-media');
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
             video.addEventListener('canplay', function () {this.play();},{once:true});
+            this.video = video;
         }else{
+            if(!self.Hls)await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
             if(Hls.isSupported()){
                 this.hls = new self.Hls(); 
                 this.hls.loadSource(src);

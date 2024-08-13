@@ -23,20 +23,11 @@ export default new Map(Object.entries({
         }
         $.mobile.nav('#mainpage','#reader');
     },
-    async refresh(elm){
-        console.log(elm);
+    async refresh(){
         $.messager.progress();
-        const sw = navigator.serviceWorker;
-        const reg = await sw.ready;
-        sw.addEventListener('message',event=>{
-            const data = event.data;
-            if(data&&data.id=='refresh'){
-                window.requestAnimationFrame(()=>location.reload());
-            }
-        });
-        reg.active.postMessage({
-            method:'refresh',
-            id:'refresh'
-        });
+        let sw2 = new MyWorker({url:'/app-sw.js',mode:'service'});
+        await sw2.ready;
+        await sw2.postMethod('refresh');
+        window.requestAnimationFrame(()=>location.reload());
     }
 }));

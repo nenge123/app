@@ -128,10 +128,11 @@ self.SQLite3Ready = new Promise(async back=>{
             param = param instanceof Array?param:[];
             return this.exec(this.str_update(table)+sql,param);
         }
-        delete(table, where) {
+        deleteJson(table, where) {
             const keys = where&&Object.keys(where);
             const values = where&&Object.values(where)||[];
-            this.exec(this.str_delete(table) + this.str_where(keys) + ';',values);
+            //console.log(this.str_delete(table) + this.str_where(keys));
+            return this.exec(this.str_delete(table) + this.str_where(keys) + ';',values);
         }
         updateJson(table, data, where) {
             const keys = where&&Object.keys(where);

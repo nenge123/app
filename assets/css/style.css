@@ -1,3 +1,17 @@
+body{
+    font-size: .875rem;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-image: url(https://lishijieacg.co/wp-content/uploads/2023/03/1678797436-d7b8f15e815a6e5.jpg);
+    background-size: cover;
+    background-position: top center;
+}
+#mainpage{
+    background-color: transparent;
+    padding: 10px;
+}
+#mainpage ~ .panel-footer{background: #ffffff8f;padding-bottom: 47px;text-align: center;}
+
 #mainpage .list{
     display: flex;
     flex-wrap: wrap;
@@ -17,6 +31,11 @@
 #mainpage .list li img{
     width: 80px;
 }
+#mainpage .list li p{
+    text-shadow: 0 0 12px #0dd57a;
+    color: #c709e7;
+    font-weight: bolder;
+}
 .video-pagination{
     display: flex;
     justify-content: space-around;
@@ -28,18 +47,6 @@
 .video-pagination span{
     min-width: 40px;
     text-align: center;
-}
-.video-tag-ul{
-    display: flex;justify-content: flex-start;align-items: center;list-style: none;
-
-}
-.video-tag-ul li{
-    margin: 10px;
-    padding: 3px 5px;
-    border-radius: 5px;
-    background-color: #15b2f0;
-    color: #fff;
-    cursor: pointer;
 }
 .video-search{
     display: flex;
@@ -77,45 +84,13 @@
     margin: 3px auto;
 }
 .video-list-ul img{
-    max-width: 98%;
     border: solid #b1b1b1 1px;
     padding: 1px;
-    width: 178px;
+    width: 160px;
 }
 #video-media{
-    width: 98%;
+    width: 100%;
     margin: 0px auto;
-}
-.video-play-ul{
-    display: flex;justify-content: flex-start;align-items: center;list-style: none;
-}
-
-.video-play-ul li{
-    margin: 10px;
-    padding: 3px 5px;
-    border-radius: 5px;
-    background-color: #15b2f0;
-    color: #fff;
-    cursor: pointer;
-}
-.video-play-ul2 li{
-    margin: 10px 0px;
-}
-.video-play-ul2 li{
-    margin: 10px;
-    padding: 3px 5px;
-    border-radius: 5px;
-    border-bottom: solid 1px #15b2f0;
-    color: #000;
-    cursor: pointer;
-}
-.video-play-ul2 li a{
-    display: block;
-    font-size: large;
-    text-decoration: none;
-    background-color: #000;
-    color: #fff;
-    padding: 3px 5px;
 }
 
 .window {
@@ -123,4 +98,81 @@
 }
 .window-header .panel-tool {
     display: unset;
+}
+.btn-blue{
+    background-color: #15b2f0;
+    color: #fff;
+    padding: 2px;
+    display: inline-block;
+}
+.btn-pink{
+    background-color: #f15295;
+    color: #fff;
+    padding: 2px;
+    display: inline-block;
+}
+.btn-block{
+    background: linear-gradient(to bottom, #ffffff69 0, #e6e6e6a8 100%);
+    border: 1px solid #bbb;
+    background-repeat: repeat-x;
+    cursor: pointer;
+    border-radius:5px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    line-height: normal;
+    box-shadow:0px 0px 5px 1px #00000029;
+}
+.p-block{
+    margin: 2px auto;
+}
+.p-block>a,.p-block>span,.p-block>b{
+    display: inline-block;
+    text-decoration: none;
+    background-color: #15b2f0;
+    color: #fff;
+    padding: 2px 5px;
+}
+.p-block>b{
+    background-color: #f15295;
+}
+.flex-left-right{
+    display: flex;justify-content: space-between;
+    align-items: stretch;
+}
+.flex-left-right .first{
+    flex-grow: 1;
+    text-align: left;
+}
+.flex-left-right input{
+    padding: 2px 5px;
+}
+.ul-grid{
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    grid-auto-rows: 40px;
+    list-style: none;
+    margin: 5px;
+    padding: 0px;
+}
+@media screen and (max-width:500px){
+    .ul-grid{
+        grid-template-columns: repeat(2, 1fr);
+    }   
+}
+@media screen and (min-width:501px) and (max-width:1000px){
+    .ul-grid{
+        grid-template-columns: repeat(3, 1fr);
+    }   
+}
+@media screen and (min-width:1001px) and (max-width:1250px){
+    .ul-grid{
+        grid-template-columns: repeat(4, 1fr);
+    }   
+}
+@media screen and (min-width:1251px){
+    .ul-grid{
+        grid-template-columns: repeat(5, 1fr);
+    }   
 }
