@@ -68,11 +68,8 @@ export default class MY_VIDEO{
                 });
             break;
             case 'netdisk':
-                let win = document.querySelector('#video-window');
-                if(!win){
-                    win = await N.addTemplate('assets/template/video-window.htm');
-                }
-                $('#video-window').window('open');
+                const win = await N.addTemplate('assets/template/video-window.htm');
+                $(win).window('open');
             break;
             case 'caiji':
                 this.caiji = await N.addTemplate('assets/template/video-caiji.htm',!0);
@@ -84,7 +81,6 @@ export default class MY_VIDEO{
     }
     async openSQL() {
         const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppVideo.js',name: 'SQLite-worker',install:true});
-        worker.methods.set('wasmload',function(data){console.log(data)});
         await worker.ready;
         await worker.postMethod('setInfo',{filepath:this.filepath,tablelist:this.tablelist});
         const status = await worker.postMethod('install', true);
@@ -164,14 +160,14 @@ export default class MY_VIDEO{
         $.mobile.nav('#video','#video-play');
     }
     ClosePlay(){
+        let video = document.querySelector('#video-media');
+        if(video&&video.paused){
+            video.pause();
+            video.remove();
+        }
         if(this.hls){
             this.hls.destroy();
             delete this.hls;
-        }else{
-            let video = document.querySelector('#video-media');
-            if(video&&video.paused){
-                video.pause();
-            }
         }
         if(this.tsdown){
             this.tsdown.postMessage('close');
@@ -229,24 +225,49 @@ export default class MY_VIDEO{
         }
 
     }
-    async playUrl(url,arg){
+    async playUrl(elm,arg){
         this.StopEvent(arg);
-        let src = decodeURI(url);
+        let src = decodeURI(elm.getAttribute('data-src'));
         let video = document.querySelector('#video-media');
+        video.hidden = false;
+        video.oncanplay = function(){this.play()};
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
-            video.addEventListener('canplay', function () {this.play();},{once:true});
+            video.onended = function(){
+                let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"),v=>decodeURI(v.getAttribute('data-src')));
+                if(srclist.length<=1)return;
+                let pos = srclist.indexOf(this.src) + 1;
+                if(pos<0||pos==srclist.length){
+                    pos = 0;
+                }
+                this.src = srclist[0];
+                this.play();
+            };
             video.play();
         }else{
             if(!self.Hls)await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
             if(Hls.isSupported()){
-                this.hls = new self.Hls(); 
+                if(!this.hls){
+                    this.hls = new self.Hls();
+                    this.hls.attachMedia(video);
+                }
                 this.hls.loadSource(src);
-                this.hls.attachMedia(video);
-                video.addEventListener('canplay', function () {this.play();},{once:true});
+                const V = this;
+                video.onended = function(){
+                    if(!V.hls) return;
+                    let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"),v=>decodeURI(v.getAttribute('data-src')));
+                    if(srclist.length<=1)return;
+                    let pos = srclist.indexOf(V.hls.url) + 1;
+                    if(pos<=0||pos==srclist.length){
+                        pos = 0;
+                    }
+                    V.hls.loadSource(srclist[0]);
+                    V.hls.attachMedia(video);
+                    this.play();
+                };
+                video.play();
             }
         }
-        video.hidden = false;
     }
     downUrl(url,arg,elm){
         const V = this;

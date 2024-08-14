@@ -99,7 +99,7 @@ const AppSQL = new class extends WorkerAppSQLite {
                     const url = urlarr.pop();
                     const textname = urlarr.pop() || '第' + (index + 1) + '集';
                     if (url) {
-                        html += `<li><p class="p-block"><b>播放:</b><span onclick="N.runModule(\'myVideo\',\'playUrl\','${encodeURI(url)}',arguments)">${textname}</span></p></li>`;
+                        html += `<li><p class="p-block" data-src="${encodeURI(url)}" onclick="N.runModule(\'myVideo\',\'playUrl\',this,arguments)"><b>播放:</b><span>${textname}</span></p></li>`;
                         html2 += `<li style="margin:10px auto;"><p class="p-block" onclick="N.runModule(\'myVideo\',\'downUrl\','${encodeURI(url)}',arguments,this)" title="${item.title.replace('"', "&quot;	")} - ${index + 1}"><b>下载:</b><span>${textname}</span></p></li>`;
                     }
                 });
