@@ -160,7 +160,7 @@ function getSQLite3(sqlite3){
         }
     }
     return new Promise(async back=>{
-        const response = await fetch('https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.wasm');
+        const response = await fetch('https://unpkg.com/sql.js@1.11.0/dist/sql-wasm.wasm');
         if(!response||!response.body){
             throw 'net error';
         }

@@ -1,9 +1,10 @@
 importScripts('../lib/WorkerApp.js');
 importScripts('../lib/WorkerAppSQLite.js');
 importScripts('../lib/SQLite3.js');
-importScripts('https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.js');
+//https://unpkg.com/sql.js@1.11.0/dist/sql-wasm.js
+importScripts('https://unpkg.com/sql.js@1.11.0/dist/sql-wasm.js');
 const AppSQL = new class extends WorkerAppSQLite {
-    wasmfile = 'https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.wasm';
+    wasmfile = 'https://unpkg.com/sql.js@1.11.0/dist/sql-wasm.wasm';
     constructor() {
         super();
         Object.entries({

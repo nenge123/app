@@ -1,5 +1,5 @@
 class WorkerService extends WorkerApp{
-    npmcdn   = "https://registry.npmmirror.com/";
+    npmcdn   = "https://unpkg.com/";
     name     = 'worker-service';
     cache_files = 'cache-files';
     cache_cdn   = 'cdn-files';

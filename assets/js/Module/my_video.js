@@ -251,7 +251,7 @@ export default class MY_VIDEO{
             };
             video.play();
         }else{
-            if(!self.Hls)await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
+            if(!self.Hls)await import('https://unpkg.com/hls.js@1.5.14/dist/hls.min.js');
             if(Hls.isSupported()){
                 if(!this.hls){
                     this.hls = new self.Hls();

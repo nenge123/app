@@ -105,7 +105,7 @@ self.N = new class NengeCommon{
     
      */
     async unzip(result,password){
-        await import('https://registry.npmmirror.com/@zip.js/zip.js/2.7.47/files/dist/zip.min.js');
+        await import('https://unpkg.com/@zip.js/zip.js@2.7.48/dist/zip.min.js');
         let ReaderList = await new zip.ZipReader(
             new zip.BlobReader(result instanceof Blob?result:new Blob([result]))
         ).getEntries().catch(e=>false);

@@ -1,5 +1,5 @@
 importScripts('../lib/WorkerApp.js');
-importScripts('https://registry.npmmirror.com/@zip.js/zip.js/2.7.42/files/dist/zip.min.js');
+importScripts('https://unpkg.com/@zip.js/zip.js@2.7.48/dist/zip.min.js');
 new class WorkerAppZip extends WorkerApp {
     /**
      * 创建GB2312编码集
