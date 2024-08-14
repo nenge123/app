@@ -73,13 +73,15 @@ export default class MY_VIDEO{
             break;
             case 'caiji':
                 this.caiji = await N.addTemplate('assets/template/video-caiji.htm',!0);
-                $.mobile.nav('#video','#video-caiji');
+                $.mobile.nav('#video-main','#video-caiji');
                 let url = localStorage.getItem('video-caiji-url');
                 if(url)$('#video-caiji-url').val(url)
             break;
         }
     }
     async openSQL() {
+        const bodyElm = $('#video-main').navpanel('body')[0];
+        this.isActive(!0);
         const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppVideo.js',name: 'SQLite-worker',install:true});
         await worker.ready;
         await worker.postMethod('setInfo',{filepath:this.filepath,tablelist:this.tablelist});
@@ -88,12 +90,17 @@ export default class MY_VIDEO{
             await worker.postMethod('createList');
         }
         await worker.setMethod();
+        this.isActive();
         return worker;
     }
+    isActive(bool){
+        const bodyElm = $('#video-main').navpanel('body')[0];
+        bodyElm.classList[bool?'add':'remove']('active');
+    }
     async getList(arg){
-        const bodyElm = $('#video').navpanel('body')[0];
-        const footerElm = $('#video').navpanel('footer')[0];
-        bodyElm.style.opacity = '0.1';
+        const bodyElm = $('#video-main').navpanel('body')[0];
+        const footerElm = $('#video-main').navpanel('footer')[0];
+        this.isActive(!0);
         const worker = await this.openSQL();
         arg = arg?arg:this.playdata;
         arg.maxlength = 10;
@@ -102,8 +109,8 @@ export default class MY_VIDEO{
         this.maxpage = result.maxpage;
         bodyElm.innerHTML = result.html;
         footerElm.innerHTML = result.pageHtml;
-        bodyElm.style.opacity = '';
-        $('#video')[0].scrollTop = 0;
+        this.isActive();
+        $('#video-main')[0].scrollTop = 0;
     }
     StopEvent(arg){
         if(arg&&arg[0]){
@@ -148,16 +155,15 @@ export default class MY_VIDEO{
     }
     async OpenPlay(id,arg,elm){
         this.StopEvent(arg);
-        $('#video').navpanel('body')[0].classList.add('noevent');
+        $('#video-main').navpanel('body')[0].classList.add('noevent');
         let videoplay = await N.addTemplate('assets/template/video-play.htm',!0);
         const bodyElm = $(videoplay).navpanel('body')[0];
-        bodyElm.style.opacity = '0.1';
+        this.isActive(!0);
         const worker = await this.openSQL();
         bodyElm.innerHTML = await worker.postMethod('Html2Play',id);
-        bodyElm.style.opacity = '';
         this.mediaTitle = elm.getAttribute('title');
-        $('#video').navpanel('body')[0].classList.remove('noevent');
-        $.mobile.nav('#video','#video-play');
+        $.mobile.nav('#video-main','#video-play');
+        this.isActive();
     }
     ClosePlay(){
         let video = document.querySelector('#video-media');
@@ -173,14 +179,14 @@ export default class MY_VIDEO{
             this.tsdown.postMessage('close');
             delete this.tsdown;
         }
-        $.mobile.nav('#video-play','#video','slide','right');
+        $.mobile.nav('#video-play','#video-main','slide','right');
         $('#video-play').navpanel('destroy');
     }
     closeVideo(){
-        $.mobile.nav('#video','#mainpage','slide','right');
+        $.mobile.nav('#video-main','#mainpage','slide','right');
     }
     closeCaiji(){
-        $.mobile.nav('#video-caiji','#video','slide','right');
+        $.mobile.nav('#video-caiji','#video-main','slide','right');
         $('#video-caiji').navpanel('destroy')
     }
     async startCaiji(elm){
@@ -196,7 +202,7 @@ export default class MY_VIDEO{
         }
         $('#video-end-caiji').on('click',async function(){
             await worker.postMethod('save2exit');
-            $.mobile.nav('#video-caiji','#video','slide','right');
+            $.mobile.nav('#video-caiji','#video-main','slide','right');
             $('#video-caiji').navpanel('destroy')
         });
         let url = $('#video-caiji-url').val();
@@ -268,16 +274,22 @@ export default class MY_VIDEO{
                 video.play();
             }
         }
+        elm.parentNode.parentNode.parentNode.open = false;
     }
-    downUrl(url,arg,elm){
+    downUrl(elm,arg){
         const V = this;
         this.StopEvent(arg);
         if(elm.getAttribute('startdown'))return;
         elm.setAttribute('startdown',true);
-        const tips = document.createElement('h3');
-        tips.innerHTML = '苹果手机存在异常<br>因此请等待全部内容块下载完毕再点击片段下载!!!<br>正常情况下低于30秒可能为广告!';
-        elm.parentNode.appendChild(tips);
-        let src = decodeURI(url);
+        const details = document.createElement('details');
+        elm.parentNode.appendChild(details);
+        const summary = document.createElement('summary');
+        summary.innerHTML = '视频片段';
+        details.appendChild(summary);
+        const showdata = document.createElement('div');
+        showdata.innerHTML = '<ins>苹果手机存在异常<br>因此请等待全部内容块下载完毕再点击片段下载!!!<br>正常情况下低于30秒可能为广告!</ins>';
+        details.appendChild(showdata);
+        details.open = true;
         this.tsdown = new Worker(self.jspath + 'Worker/downTS.js');
         this.tsdown.addEventListener('message',function(event){
             const data = event.data;
@@ -288,19 +300,22 @@ export default class MY_VIDEO{
                     elm.innerHTML = data.info;
                 }else if(data.result){
                     const href = URL.createObjectURL(data.result);
-                    const p = document.createElement('p');
-                    const a = document.createElement('a');
-                    console.log(data.duration);
-                    const duration = data.duration? '约'+(data.duration>60?Math.ceil(data.duration/6)/10+'分':Math.ceil(data.duration)+'秒'):'';
-                    elm.parentNode.appendChild(p);
-                    p.appendChild(a);
-                    a.href = href;
-                    a.download = elm.getAttribute('title')+'-片段('+data.PathIndex+').ts';
-                    a.target = '_blank';
-                    a.innerHTML = '片段('+data.PathIndex+')'+duration;
+                    const filename = elm.getAttribute('title')+' 片段('+data.PathIndex+').ts';
                     if(data.close){
-                        return a.click();
+                        return N.downURL(href,filename);
                     }
+                    const duration = data.duration? '约'+(data.duration>60?Math.ceil(data.duration/6)/10+'分':Math.ceil(data.duration)+'秒'):'';
+                    const textname = elm.getAttribute('title')+'-片段('+data.PathIndex+')';
+                    const p = document.createElement('p');
+                    p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
+                    p.setAttribute('data-href',href);
+                    p.setAttribute('data-name',filename);
+                    p.classList.add('p-block');
+                    p.style.margin = '15px 0px';
+                    showdata.appendChild(p);
+                    p.addEventListener('click',function(){
+                        N.downURL(this.getAttribute('data-href'),this.getAttribute('data-name'));
+                    });
                     delete data.result;
                 }else if(data.close){
                     elm.removeAttribute('startdown');
@@ -313,6 +328,7 @@ export default class MY_VIDEO{
         this.tsdown.addEventListener('error',function(event){
             elm.innerHTML = event.message;
         });
+        let src = decodeURI(elm.getAttribute('data-down'));
         this.tsdown.postMessage(src);
     }
 }

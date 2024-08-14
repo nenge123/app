@@ -90,24 +90,39 @@ const AppSQL = new class extends WorkerAppSQLite {
 
             },
             Html2Play(data, port) {
+                let maxlen = 25;
                 let item = this.database.selectOne('data', { id: data.result });
+                let urllist = item.url.split('#');
                 let html = '<h2>' + item.title + '</h2>';
-                let html2 = '<details style="margin:10px 0px;" close><summary>尝试下载,苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</summary><ol>';
-                html += '<h3 class="video-play-h3">视频列表</h3><ol class="ul-grid">';
-                item.url.split('#').forEach((urlstr, index) => {
+                let html2 = '<h3 style="margin-top:50px">苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</h2>';
+                html += '<div style="margin:10px 0px;"><video id="video-media" controls poster="'+item.img+'" hidden></video></div>';
+                if(urllist.length<maxlen){
+                    html += '<details style="margin:10px 0px;"  open><summary>播放列表</summary><ol class="ul-grid">';
+                    html2 += '<details style="margin:10px 0px;" close><summary>视频下载</summary><ol>'
+                }else{
+                    html += '<details style="margin:10px 0px;" open><summary>播放列表 1- '+maxlen+'</summary><ol class="ul-grid">';
+                    html2 += '<details style="margin:10px 0px;" close><summary>视频下载1-'+maxlen+'</summary><ol>'
+                }
+                let len = 0;
+                urllist.forEach((urlstr, index) => {
                     const urlarr = urlstr.split('$');
                     const url = urlarr.pop();
                     const textname = urlarr.pop() || '第' + (index + 1) + '集';
                     if (url) {
+                        len++;
+                        if(len>maxlen){
+                            html += '</ul></details><details style="margin:10px 0px;" close><summary>播放列表 '+(index+1)+' - '+(index+1 + maxlen)+'</summary><ol class="ul-grid">';
+                            html2 += '</ol></details><details style="margin:10px 0px;" close><summary>视频下载 '+(index+1)+' - '+(index+1 + maxlen)+'</summary><ol>';
+                            len = 0;
+                        }
                         html += `<li><p class="p-block" data-src="${encodeURI(url)}" onclick="N.runModule(\'myVideo\',\'playUrl\',this,arguments)"><b>播放:</b><span>${textname}</span></p></li>`;
-                        html2 += `<li style="margin:10px auto;"><p class="p-block" onclick="N.runModule(\'myVideo\',\'downUrl\','${encodeURI(url)}',arguments,this)" title="${item.title.replace('"', "&quot;	")} - ${index + 1}"><b>下载:</b><span>${textname}</span></p></li>`;
+                        html2 += `<li style="margin:10px auto;"><p data-down="${encodeURI(url)}" class="p-block" onclick="N.runModule(\'myVideo\',\'downUrl\',this,arguments)" title="${item.title.replace('"', "&quot;	")} - ${textname}"><b>下载:</b><span>${textname}</span></p></li>`;
                     }
                 });
                 html2 += '</ol></details>';
-                html += '</ol>';
-                html += '<div><video id="video-media" controls poster="'+item.img+'" hidden></video></div>';
+                html += '</ol></details>';
                 html += html2;
-                html += `<details style="margin:10px 0px;" close><summary>管理</summary><div class="ul-grid">
+                html += `<details style="margin:10px 0px;" close><summary>视频管理</summary><div class="ul-grid">
                 <p class="p-block"><span onclick="N.runModule('myVideo','exportID',${item.id})">导出数据</span></p><p class="p-block"><b onclick="N.runModule('myVideo','deleteID',${item.id})">删除数据</b><p></div></details>`;
                 port.postMessage({
                     id: data.id,

@@ -36,6 +36,14 @@ body{
     color: #c709e7;
     font-weight: bolder;
 }
+#video-main{
+    background-color: #ffffffab;
+}
+#video-main.active{
+    opacity: .8;    
+    background-color: #100e18ab;
+    pointer-events: none;
+}
 .video-pagination{
     display: flex;
     justify-content: space-around;

@@ -1,6 +1,6 @@
 export default new Map(Object.entries({
     async openVideo(){
-        let video = document.querySelector('#video');
+        let video = document.querySelector('#video-main');
         if(!video){
             const {default:MY_VIDEO} = await  import('./my_video.js'); 
             const myVideo = new MY_VIDEO('video-play-list');
@@ -11,7 +11,7 @@ export default new Map(Object.entries({
             this.modules.set('myVideo',myVideo);
             self.myVideo = myVideo;
         }
-        $.mobile.nav('#mainpage','#video');
+        $.mobile.nav('#mainpage','#video-main');
     },
     async openReader(){
         let reader = document.querySelector('#reader');
