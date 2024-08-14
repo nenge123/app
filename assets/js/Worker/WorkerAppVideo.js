@@ -31,7 +31,7 @@ const AppSQL = new class extends WorkerAppSQLite {
                 let maxpage = Math.ceil(total / limit) || 1;
                 page = page > maxpage ? maxpage : parseInt(page > 0 ? page : 1);
                 if (total) {
-                    sql += ' ORDER BY `id` ' + (order == 'ASC' ? 'ASC' : 'DESC') + ' LIMIT ' + (limit * (page - 1)) + ',' + limit;
+                    sql += ' ORDER BY `time` ' + (order == 'ASC' ? 'ASC' : 'DESC') + ' LIMIT ' + (limit * (page - 1)) + ',' + limit;
                     let list = this.database.selectSQL('data', sql, sqlparme);
                     if (list && list.length) {
                         listHTML += '<h3 class="video-list-h3">视频列表</h3><ul class="video-list-ul">';
