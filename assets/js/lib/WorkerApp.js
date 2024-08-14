@@ -58,8 +58,8 @@ class WorkerApp {
     }
     onRun() {
         if (self.postMessage) {
-            self.onmessage = e => this.onMessage(e);
-            this.callMethod('_Initialized',e=>this.callFunc('onComplete',self));
+            self.addEventListener('message',e => this.onMessage(e));
+            this.callMethod('_Initialized',e=>this.callFunc('onComplete',self),self);
         } else {
             self.addEventListener('connect',e => this.callFunc('sharePort', e));
         }
@@ -200,11 +200,31 @@ class WorkerApp {
         },
         async sharePort(e, fn) {
             e.source.onmessage = e => this.onMessage(e);
-            this.callMethod('_Initialized',()=>this.callFunc('onComplete',e.source));
+            this.callMethod('_Initialized',()=>this.callFunc('onComplete',e.source),e.source);
         },
         onComplete(port){
             port.postMessage('complete');
+        },
+        async loadBuffer(url,port,maxlength){
+            const response = await fetch(url);
+            if(!response||!response.body){
+                throw 'net error';
+            }
+            const total = parseInt(response.headers.get('content-length')||maxlength||0);
+            const reader  = response.body.getReader();
+            const chunk = [];
+            let loaded = 0;
+            while(true){
+                const { done, value } = await reader.read();
+                if(done){
+                    break;
+                }
+                loaded += value.byteLength;
+                port&&port.postMessage({method:'wasmload',loaded,total,speed:value.byteLength});
+                chunk.push(value);
+            }
+            return await (new Blob(chunk)).arrayBuffer();
         }
     }));
 }
-Object.defineProperty(self,'WorkerApp',{get:()=>WorkerApp});
+Object.defineProperties(self,{WorkerApp:{get:()=>WorkerApp}});

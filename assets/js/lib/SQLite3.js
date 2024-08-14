@@ -1,14 +1,5 @@
-
-importScripts('https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.js');
-initSqlJs({
-    locateFile(){
-        return 'https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.wasm';
-    }
-});
-self.SQLite3Ready = new Promise(async back=>{
-    const sqlite3 = await initSqlJsPromise;
-    delete sqlite3.wasmBinary;
-    class SQLite3 extends sqlite3.Database {
+function getSQLite3(sqlite3){
+    return class SQLite3 extends sqlite3.Database {
         constructor(data) {
             super((data instanceof Uint8Array) && data.byteLength > 0 ? data : undefined);
         }
@@ -108,6 +99,11 @@ self.SQLite3Ready = new Promise(async back=>{
             param = param instanceof Array?param:[];
             return this.fetchColumn(this.str_select(table,column)+sql,param,index);
         }
+        selectColumnJson(table,where,column,index){
+            const keys = where&&Object.keys(where)||[];
+            const values = where&&Object.values(where)||[];
+            return this.fetchColumn(this.str_select(table,column)+this.str_where(keys),values,index);
+        }
         selectCountSQL(table,sql,param){
             sql = sql?sql:'';
             param = param instanceof Array?param:[];
@@ -163,6 +159,28 @@ self.SQLite3Ready = new Promise(async back=>{
             }
         }
     }
-    self.SQLite3 = SQLite3;
-    back(SQLite3);
-});
+    return new Promise(async back=>{
+        const response = await fetch('https://registry.npmmirror.com/sql.js/1.11.0/files/dist/sql-wasm.wasm');
+        if(!response||!response.body){
+            throw 'net error';
+        }
+        const total = parseInt(response.headers.get('content-length')||652953);
+        const reader  = response.body.getReader();
+        const chunk = [];
+        let loaded = 0;
+        while(true){
+            const { done, value } = await reader.read();
+            if(done){
+                break;
+            }
+            loaded += value.byteLength;
+            port&&port.postMessage({method:'wasmload',loaded,total,speed:value.byteLength});
+            chunk.push(value);
+        }
+        const wasmBinary =  await WorkerApp.callFunc('loadBuffer',url);
+        initSqlJs({wasmBinary});
+        const sqlite3 = await initSqlJsPromise;
+        delete sqlite3.wasmBinary;
+    })
+};
+self.getSQLite3 = getSQLite3;

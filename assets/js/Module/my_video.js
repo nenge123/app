@@ -1,6 +1,6 @@
 export default class MY_VIDEO{
     maxpage = 0;
-    sqlfile = 'my-video.sqlite3';
+    filepath = 'my-video.sqlite3';
     tablelist =  {
         data: {
             id: 'integer primary key autoincrement',
@@ -45,7 +45,7 @@ export default class MY_VIDEO{
             break;
             case 'export':
                 $.messager.progress();
-                N.postdown(this.sqlfile,{cache_name:'cache-worker'});
+                N.postdown(this.filepath,{cache_name:'cache-worker'});
                 $.messager.progress('close');
             break;
             case 'import':
@@ -83,10 +83,12 @@ export default class MY_VIDEO{
         }
     }
     async openSQL() {
-        const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppSQLite.js',name: 'SQLite-worker',install:true});
+        const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppVideo.js',name: 'SQLite-worker',install:true});
+        worker.methods.set('wasmload',function(data){console.log(data)});
         await worker.ready;
-        await worker.postMethod('setInfo',{datafile:this.sqlfile,tablelist:this.tablelist});
-        if (!(await worker.postMethod('install', true))) {
+        await worker.postMethod('setInfo',{filepath:this.filepath,tablelist:this.tablelist});
+        const status = await worker.postMethod('install', true);
+        if (!status) {
             await worker.postMethod('createList');
         }
         await worker.setMethod();
@@ -209,19 +211,19 @@ export default class MY_VIDEO{
         this.closeCaiji();
 
     }
-    async exportJSON(mediaID){
+    async exportID(mediaID){
         if(mediaID){
             const worker = await this.openSQL();
-            let blob  = await worker.postMethod('exportJSON',mediaID);
+            let blob  = await worker.postMethod('exportID',mediaID);
             const href = URL.createObjectURL(blob);
             N.downURL(href,this.mediaTitle+'.json');
             URL.revokeObjectURL(href);
         }
     }
-    async deleteJSON(mediaID){
+    async deleteID(mediaID){
         if(mediaID){
             const worker = await this.openSQL();
-            await worker.postMethod('deleteJSON',mediaID);
+            await worker.postMethod('deleteID',mediaID);
             this.ClosePlay();
             this.getList(this.playdata);
         }
@@ -234,6 +236,7 @@ export default class MY_VIDEO{
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
             video.addEventListener('canplay', function () {this.play();},{once:true});
+            video.play();
         }else{
             if(!self.Hls)await import('https://registry.npmmirror.com/hls.js/1.5.13/files/dist/hls.min.js');
             if(Hls.isSupported()){

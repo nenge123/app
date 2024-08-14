@@ -8,7 +8,7 @@ self.N = new class NengeCommon{
             request.addEventListener('readystatechange',function(e){
                 if(request.readyState === request.DONE){
                     let dom = request.response;
-                    back(dom.body.firstElementChild);
+                    back(Array.from(dom.body.children));
                 }
             });
             request.addEventListener('abort',e=>error(e));
@@ -19,11 +19,13 @@ self.N = new class NengeCommon{
         });
     }
     async addTemplate(url,bool){
-        const win = await N.template(url);
+        const elms = await N.template(url);
         const content = bool?document.body:document.querySelector('#other');
-        content.appendChild(win);
+        elms.forEach(elm=>{
+            content.appendChild(elm);
+        });
         $.parser.parse(bool?undefined:'#other');
-        return win;
+        return elms[0];
     }
     upload(fn,accept){
         let input = document.createElement('input');
@@ -64,6 +66,28 @@ self.N = new class NengeCommon{
             maximizable:false,
             width:300,    
             height:200,    
+        });
+    }
+    convert(){
+        this.upload(async files=>{
+            const worker = new MyWorker({url:self.jspath+'Worker/WorkerAppFFmpeg.js',type:'module',install:true});
+            worker.methods.set('log',function(data,port){
+                console.log(data.message);
+            });
+            worker.methods.set('wasmload',function(data,port){
+                console.log(data);
+            });
+            worker.methods.set('progress',function(data,port){
+                console.log(data);
+            });
+            await worker.setMethod();
+            console.log(await worker.ready);
+            await worker.callMethod('writeFile','0.ts',new Uint8Array(await files[0].arrayBuffer()));
+            await worker.callMethod('exec',['-i','0.ts','a.mp4'],-1);
+            const file = await worker.callMethod('readFile','a.mp4');
+            worker.terminate();
+            this.downURL(URL.createObjectURL(new Blob([file])),'a.mp4');
+
         });
     }
     /**

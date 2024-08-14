@@ -88,3 +88,4 @@ class WorkerService extends WorkerApp{
         return response;
     }
 }
+Object.defineProperties(self,{WorkerService:{get:()=>WorkerService}});
