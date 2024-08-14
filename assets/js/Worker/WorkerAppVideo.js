@@ -51,17 +51,17 @@ const AppSQL = new class extends WorkerAppSQLite {
                 }
                 let taglist = this.database.selectSQL('tag', ' ORDER BY `num` desc', []);
                 if (taglist && taglist.length) {
-                    listHTML += '<h3 class="video-tag-h3">标签云</h3><ul class="ul-grid nolist">';
-                    let listHTML2 = '<h3 class="video-tag-h3">标签云管理</h3><ul class="ul-grid nolist">';
-                    let listHTML3 = '<h3 class="video-tag-h3">标签云导出</h3><ul class="ul-grid nolist">';
+                    listHTML += '<details style="margin:10px 0px;" open><summary class="video-tag-h3">标签云</summary><ul class="ul-grid nolist">';
+                    let listHTML2 = '<details style="margin:10px 0px;" close><summary class="video-tag-h3">标签云管理</summary><ul class="ul-grid nolist">';
+                    let listHTML3 = '<details style="margin:10px 0px;" close><summary class="video-tag-h3">标签云导出</summary><ul class="ul-grid nolist">';
                     taglist.forEach(item => {
                         listHTML += `<li><p class="p-block"><b>只看:</b><span onclick="N.runModule(\'myVideo\',\'SetTag\','${encodeURI(item.name)}',arguments)">${item.name}(${item.num})</span></p></li>`;
                         listHTML2 += `<li onclick="N.runModule(\'myVideo\',\'DelTag\','${encodeURI(item.name)}',arguments)"><p class="p-block"><b>删除全部</b><span>${item.name}</span></p></li>`;
                         listHTML3 += `<li onclick="N.runModule(\'myVideo\',\'exportTag\','${encodeURI(item.name)}',arguments)"><p class="p-block"><b>导出全部:</b><span>${item.name}(${item.num})</span></p></li>`;
                     });
-                    listHTML2 +='</ul>';
-                    listHTML3 +='</ul>';
-                    listHTML += '</ul><br><br><br><br><br><br><br><br><br>'+listHTML3+listHTML2;
+                    listHTML2 +='</ul></details>';
+                    listHTML3 +='</ul></details>';
+                    listHTML += '</ul></details>'+listHTML3+listHTML2;
                 }
                 port.postMessage({
                     id: data.id,
@@ -92,7 +92,7 @@ const AppSQL = new class extends WorkerAppSQLite {
             Html2Play(data, port) {
                 let item = this.database.selectOne('data', { id: data.result });
                 let html = '<h2>' + item.title + '</h2>';
-                let html2 = '<h3>尝试下载,苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</h3><ol>';
+                let html2 = '<details style="margin:10px 0px;" close><summary>尝试下载,苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</summary><ol>';
                 html += '<h3 class="video-play-h3">视频列表</h3><ol class="ul-grid">';
                 item.url.split('#').forEach((urlstr, index) => {
                     const urlarr = urlstr.split('$');
@@ -103,12 +103,12 @@ const AppSQL = new class extends WorkerAppSQLite {
                         html2 += `<li style="margin:10px auto;"><p class="p-block" onclick="N.runModule(\'myVideo\',\'downUrl\','${encodeURI(url)}',arguments,this)" title="${item.title.replace('"', "&quot;	")} - ${index + 1}"><b>下载:</b><span>${textname}</span></p></li>`;
                     }
                 });
-                html2 += '</ol>';
+                html2 += '</ol></details>';
                 html += '</ol>';
                 html += '<div><video id="video-media" controls poster="'+item.img+'" hidden></video></div>';
                 html += html2;
-                html += `<br><br><br><br><div class="ul-grid">
-                <p class="p-block"><span onclick="N.runModule('myVideo','exportID',${item.id})">导出数据</span></p><p class="p-block"><b onclick="N.runModule('myVideo','deleteID',${item.id})">删除数据</b><p></div>`;
+                html += `<details style="margin:10px 0px;" close><summary>管理</summary><div class="ul-grid">
+                <p class="p-block"><span onclick="N.runModule('myVideo','exportID',${item.id})">导出数据</span></p><p class="p-block"><b onclick="N.runModule('myVideo','deleteID',${item.id})">删除数据</b><p></div></details>`;
                 port.postMessage({
                     id: data.id,
                     result: html
