@@ -155,10 +155,9 @@ export default class MY_VIDEO{
     }
     async OpenPlay(id,arg,elm){
         this.StopEvent(arg);
-        $('#video-main').navpanel('body')[0].classList.add('noevent');
+        this.isActive(!0);
         let videoplay = await N.addTemplate('assets/template/video-play.htm',!0);
         const bodyElm = $(videoplay).navpanel('body')[0];
-        this.isActive(!0);
         const worker = await this.openSQL();
         bodyElm.innerHTML = await worker.postMethod('Html2Play',id);
         this.mediaTitle = elm.getAttribute('title');

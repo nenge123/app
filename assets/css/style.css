@@ -44,18 +44,6 @@ body{
     background-color: #100e18ab;
     pointer-events: none;
 }
-.video-pagination{
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin: 3px;
-}
-.video-pagination span{
-    min-width: 40px;
-    text-align: center;
-}
 .video-search{
     display: flex;
     justify-content: center;
@@ -64,12 +52,6 @@ body{
 .video-search button{
     min-width: 80px;
     padding: 5px;
-}
-.noevent{
-    pointer-events:none !important;
-}
-.noevent *{
-    pointer-events: none !important;
 }
 .video-list-ul{
     display: flex;
