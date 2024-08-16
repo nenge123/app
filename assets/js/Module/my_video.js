@@ -283,7 +283,7 @@ export default class MY_VIDEO {
         video.style.background  = 'url('+video.getAttribute('poster')+') center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
-            video.load();
+            video.play();
         } else {
             if (!self.Hls) await import('https://unpkg.com/hls.js@1.5.14/dist/hls.min.js');
             if (Hls.isSupported()) {
@@ -307,7 +307,7 @@ export default class MY_VIDEO {
                     this.play();
                 };
                 */
-                video.load();
+                video.play();
             }
         }
         elm.parentNode.parentNode.parentNode.open = false;
