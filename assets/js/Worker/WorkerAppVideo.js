@@ -10,7 +10,7 @@ const AppSQL = new class extends WorkerAppSQLite {
         Object.entries({
             Html2Video(data, port) {
                 let { page, tag, search, limit, order, maxlength } = data.result;
-                let listHTML = '<form class="video-search" onsubmit="N.runModule(\'myVideo\',\'SetSearch\',this,arguments);"><input type="text" class="textbox" name="search" value="' + (search ? search : '') + '"><button type="submit" class="l-btn">搜索</button><button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'ClearSet\',this,arguments)">清除筛选</button></form>';
+                let listHTML = '<form class="video-search" onsubmit="N.runModule(\'myVideo\',\'SetSearch\',this,arguments);"><input type="text" class="textbox" name="search" value="' + (search ? search : '') + '">&nbsp;<button type="submit" class="l-btn">搜索</button>&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'ClearSet\',this,arguments)">清除筛选</button></form>';
                 let sql = '';
                 let sqlarr = [];
                 let sqlparme = [];
@@ -78,25 +78,25 @@ const AppSQL = new class extends WorkerAppSQLite {
                 this.callMethod('exit_close');
             },
             html_page_pagination(pagelist,page,maxpage,total){
-                let html = '<div class="first"><button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',1,arguments)" ' + (page === 1 ? 'class="active"' : '') + '>顶页</button>';
+                let html = '<div class="first"><button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',1,arguments)" ' + (page === 1 ? 'class="active"' : '') + '>第一页</button>';
                 if (pagelist.length) {
-                    html += '&nbsp;&nbsp;<select onchange="N.runModule(\'myVideo\',\'SetPage\',this.value);">';
+                    html += '&nbsp;&nbsp;<label>选页:<select onchange="N.runModule(\'myVideo\',\'SetPage\',this.value);">';
                     pagelist.forEach(p => {
-                        html += '<option value="' + p + '" ' + (p === page ? 'selected' : '') + '>' + p + '</option>';
+                        html += '<option value="' + p + '" ' + (p === page ? 'selected' : '') + '>第' + p + '页</option>';
                     });
-                    html += '</select>';
+                    html += '</select></label>';
                 }
-                html += '&nbsp;&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',' + maxpage + ',arguments)" ' + (page === maxpage ? 'class="active"' : '') + '>末页</button>&nbsp;&nbsp;<from><label>跳转:<input class="textbox" style="width: 80px;" type="number" value="' + page + '" onchange="N.runModule(\'myVideo\',\'SetPage\',this.value,arguments)"></label></from></div>';
+                html += '&nbsp;&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',' + maxpage + ',arguments)" ' + (page === maxpage ? 'class="active"' : '') + '>最后一页</button>&nbsp;&nbsp;<from><label>跳转:<input class="textbox" style="width: 80px;" type="number" value="' + page + '" onchange="N.runModule(\'myVideo\',\'SetPage\',this.value,arguments)"></label></from></div>';
                 return `<div class="flex-left-right">${html}<p class="p-block"><b>1-${maxpage}</b><span>页</span><b>${total}</b><span>条数据</span></p></div>`;
 
             },
             Html2Play(data, port) {
-                let maxlen = 25;
+                let maxlen = 10;
                 let item = this.database.selectOne('data', { id: data.result });
                 let urllist = item.url.split('#');
                 let html = '<h2>' + item.title + '</h2>';
                 let html2 = '<h3 style="margin-top:50px">苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</h2>';
-                html += '<div style="margin:10px 0px;"><video id="video-media" controls poster="'+item.img+'" hidden></video></div>';
+                html += '<div style="margin:10px 0px;"><video id="video-media" controls poster="'+item.img+'"></video></div>';
                 if(urllist.length<maxlen){
                     html += '<details style="margin:10px 0px;"  open><summary>播放列表</summary><ol class="ul-grid">';
                     html2 += '<details style="margin:10px 0px;" close><summary>视频下载</summary><ol>'

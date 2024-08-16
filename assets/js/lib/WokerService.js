@@ -65,7 +65,9 @@ class WorkerService extends WorkerApp{
         let response = await cache.match(request);
         if(update&&!response){
             response = await fetch(request,{headers:this.no_cache});
-            await cache.put(request,response.clone());
+            if(response&&response.status==200){
+                cache.put(request,response.clone());
+            }
         }
         return response;
     }

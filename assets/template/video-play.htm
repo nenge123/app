@@ -1,10 +1,10 @@
-<div id="video-play" class="easyui-navpanel" data-option="maximized:true">
-    <header>
-        <div class="m-toolbar">
-            <div class="m-title">视频播放</div>
-            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:e=>N.runModule('myVideo','ClosePlay')">返回</button>
-            </div>
-        </div> 
+<div id="video-play" class="full-page div-page">
+    <header class="div-header" style="height:42px;">
+        <div class="left">
+            <button class="btn-flex btn-back" onclick="N.runModule('myVideo','ClosePlay')" type="button"><span>返回</span></button>
+        </div>
+        <div class="center">播放</div>
     </header>
-    <div class="panel-loading">Loading...</div>
+    <main>请稍等</main>
+    <footer>请稍等</footer>
 </div>

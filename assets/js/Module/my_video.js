@@ -1,285 +1,322 @@
-export default class MY_VIDEO{
+export default class MY_VIDEO {
     maxpage = 0;
     filepath = 'my-video.sqlite3';
-    tablelist =  {
+    tablelist = {
         data: {
             id: 'integer primary key autoincrement',
             title: 'char',
             type: 'char',
             url: 'char',
             img: 'char',
-            time:'char',
+            time: 'char',
         },
         tag: {
             name: 'char',
             num: 'int'
         }
     };
-    constructor(savename) {
-        this.savename = savename;
-        let playdata = localStorage.getItem(this.savename);
-        this.playdata = playdata?JSON.parse(playdata):{};
+    constructor(savename,elm) {
+        if(savename){
+            this.savename = savename;
+            let playdata = localStorage.getItem(this.savename);
+            this.playdata = playdata ? JSON.parse(playdata) : {};
+        }
+        if(elm){
+            this.Elm = elm;
+        }
+        this.setEvent();
+        this.getList();
+        this.show();
     }
-    getdata(){
+    getdata() {
         return this.playdata;
     }
-    setdata(obj){
-        if(obj){
-            this.playdata = Object.assign(this.playdata,obj);
-        }else{
-            this.playdata = {page:1};
+    setdata(obj) {
+        if (obj) {
+            this.playdata = Object.assign(this.playdata, obj);
+        } else {
+            this.playdata = { page: 1 };
         }
-        localStorage.setItem(this.savename,JSON.stringify(this.playdata));
+        localStorage.setItem(this.savename, JSON.stringify(this.playdata));
         this.getList(this.playdata);
         return this.playdata;
     }
-    async ManageEvent(event){
-        const method = event&&event.method;
-        switch(method){
-            case 'clear':
-                $.messager.progress();
-                const worker = await this.openSQL();
-                await worker.postMethod('clear2exit');
-                $.messager.progress('close');
-                this.setdata();
-            break;
-            case 'export':
-                $.messager.progress();
-                N.postdown(this.filepath,{cache_name:'cache-worker'});
-                $.messager.progress('close');
-            break;
-            case 'import':
-                const keylist = Object.keys(this.tablelist.data);
-                const insertkeys = event.mode === 1 ? keylist.slice(1) : keylist;
-                N.upload(async files => {
-                    $.messager.progress();
-                    for(const file of files){
-                        const worker = await this.openSQL();
-                        const mime = await file.slice(0,2).text();
-                        if(mime==='PK'){
-                            await worker.getMessage({method:'importFile',result:await N.unzip(file,'IAM18'),insertkeys})
-                        }else{
-                            await worker.getMessage({method:'importFile',result:new Uint8Array(await file.arrayBuffer()),insertkeys});
+    hide(){
+        this.Elm.classList.remove('show');
+        document.querySelector('#start-page').hidden = false;
+    }
+    show(){
+        this.Elm.classList.add('show');
+        document.querySelector('#start-page').hidden = true;
+    }
+    async setEvent() {
+        const V = this;
+        Array.from(V.Elm.querySelectorAll('[data-method]'), elm => {
+            elm.addEventListener('click',async function (event) {
+                N.StopEvent(event);
+                let method = this.getAttribute('data-method');
+                switch (method) {
+                    case 'back':
+                        V.hide();
+                        break;
+                    case 'clear':
+                        if(window.confirm('清空吗?')){
+                            const worker = await V.openSQL();
+                            await worker.postMethod('clear2exit');
+                            V.setdata();
                         }
-                        worker.postMethod('exitworker');
-                    }
-                    $.messager.progress('close');
-                    this.setdata();
-                });
-            break;
-            case 'netdisk':
-                const win = await N.addTemplate('assets/template/video-window.htm');
-                $(win).window('open');
-            break;
-            case 'caiji':
-                this.caiji = await N.addTemplate('assets/template/video-caiji.htm',!0);
-                $.mobile.nav('#video-main','#video-caiji');
-                let url = localStorage.getItem('video-caiji-url');
-                if(url)$('#video-caiji-url').val(url)
-            break;
-        }
+                        break;
+                    case 'export':
+                        N.postdown(V.filepath, { cache_name: 'cache-worker' });
+                        break;
+                    case 'import':
+                        const mode = parseInt(this.getAttribute('data-mode')||0);
+                        const keylist = Object.keys(V.tablelist.data);
+                        const insertkeys = mode === 1 ? keylist.slice(1) : keylist;
+                        N.upload(async files => {
+                            V.Elm.querySelector('main').innerHTML = 'loading...';
+                            V.Elm.querySelector('footer').innerHTML = 'loading...';
+                            V.isActive(!0);
+                            for (const file of files) {
+                                const worker = await V.openSQL();
+                                const mime = await file.slice(0, 2).text();
+                                if (mime === 'PK') {
+                                    await worker.getMessage({ method: 'importFile', result: await N.unzip(file, 'IAM18'), insertkeys })
+                                } else {
+                                    await worker.getMessage({ method: 'importFile', result: new Uint8Array(await file.arrayBuffer()), insertkeys });
+                                }
+                                worker.postMethod('exitworker');
+                            }
+                            V.setdata();
+                        });
+                        break;
+                    case 'netdisk':
+                        V.OpenNetDisk();
+                        break;
+                    case 'caiji':
+                        await V.OpenCaiji();
+                        let url = localStorage.getItem('video-caiji-url');
+                        if (url) document.querySelector('#video-caiji-url').value = url;
+                        break;
+                }
+            });
+        });
     }
     async openSQL() {
-        const bodyElm = $('#video-main').navpanel('body')[0];
         this.isActive(!0);
-        const worker = new MyWorker({url:self.jspath + 'Worker/WorkerAppVideo.js',name: 'SQLite-worker',install:true});
+        const worker = new MyWorker({ url: self.jspath + 'Worker/WorkerAppVideo.js', name: 'SQLite-worker', install: true });
         await worker.ready;
-        await worker.postMethod('setInfo',{filepath:this.filepath,tablelist:this.tablelist});
+        await worker.postMethod('setInfo', { filepath: this.filepath, tablelist: this.tablelist });
         const status = await worker.postMethod('install', true);
         if (!status) {
             await worker.postMethod('createList');
         }
         await worker.setMethod();
-        this.isActive();
         return worker;
     }
-    isActive(bool){
-        const bodyElm = $('#video-main').navpanel('body')[0];
-        bodyElm.classList[bool?'add':'remove']('active');
+    isActive(bool) {
+        this.Elm.classList[bool ? 'add' : 'remove']('noevent');
     }
-    async getList(arg){
-        const bodyElm = $('#video-main').navpanel('body')[0];
-        const footerElm = $('#video-main').navpanel('footer')[0];
-        this.isActive(!0);
+    async getList(arg) {
+        this.Elm.querySelector('main').innerHTML = 'loading...';
+        this.Elm.querySelector('footer').innerHTML = 'loading...';
         const worker = await this.openSQL();
-        arg = arg?arg:this.playdata;
+        arg = arg ? arg : this.playdata;
         arg.maxlength = 10;
         arg.limit = 30;
-        let result = await worker.postMethod('Html2Video',arg);
+        let result = await worker.postMethod('Html2Video', arg);
         this.maxpage = result.maxpage;
-        bodyElm.innerHTML = result.html;
-        footerElm.innerHTML = result.pageHtml;
+        this.Elm.querySelector('main').innerHTML = result.html;
+        this.Elm.querySelector('footer').innerHTML = result.pageHtml;
+        this.Elm.querySelector('main').scrollTop = 0;
         this.isActive();
-        $('#video-main')[0].scrollTop = 0;
     }
-    StopEvent(arg){
-        if(arg&&arg[0]){
+    StopEvent(arg) {
+        if (arg && arg[0]) {
             arg[0].preventDefault();
             arg[0].stopPropagation();
         }
     }
-    SetPage(page,arg){
+    SetPage(page, arg) {
         this.StopEvent(arg);
-        this.setdata({page})
+        this.setdata({ page })
     }
-    SetSearch(elm,arg){
+    SetSearch(elm, arg) {
         this.StopEvent(arg);
         let post = new FormData(elm);
-        this.setdata({search:post.get('search'),page:1});
+        this.setdata({ search: post.get('search'), page: 1 });
     }
-    ClearSet(elm,arg){
+    ClearSet(elm, arg) {
         this.StopEvent(arg);
         this.setdata();
     }
-    SetTag(tag,arg){
+    SetTag(tag, arg) {
         tag = decodeURI(tag);
         this.StopEvent(arg);
-        this.setdata({tag,page:1});
+        this.setdata({ tag, page: 1 });
     }
-    async DelTag(tag,arg){
+    async DelTag(tag, arg) {
         tag = decodeURI(tag);
         this.StopEvent(arg);
         const worker = await this.openSQL();
-        await worker.postMethod('deleteTag',tag);
+        await worker.postMethod('deleteTag', tag);
         this.setdata();
     }
-    async exportTag(tag,arg){
+    async exportTag(tag, arg) {
         tag = decodeURI(tag);
         this.StopEvent(arg);
         const worker = await this.openSQL();
-        let blob = await worker.postMethod('exportTag',tag);
+        let blob = await worker.postMethod('exportTag', tag);
         const href = URL.createObjectURL(blob);
-        N.downURL(href,tag+'.json');
+        N.downURL(href, tag + '.json');
         URL.revokeObjectURL(href);
 
     }
-    async OpenPlay(id,arg,elm){
+    async OpenPlay(id, arg, elm) {
         this.StopEvent(arg);
         this.isActive(!0);
-        let videoplay = await N.addTemplate('assets/template/video-play.htm',!0);
-        const bodyElm = $(videoplay).navpanel('body')[0];
+        let videoplay = await N.addTemplate('assets/template/video-play.htm', !0);
+        videoplay.style.zIndex = '3';
         const worker = await this.openSQL();
-        bodyElm.innerHTML = await worker.postMethod('Html2Play',id);
+        videoplay.querySelector('main').innerHTML = await worker.postMethod('Html2Play', id);
+        videoplay.classList.add('show');
+        this.Elm.classList.add('hide');
         this.mediaTitle = elm.getAttribute('title');
-        $.mobile.nav('#video-main','#video-play');
-        this.isActive();
+        this.videoplay = videoplay;
     }
-    ClosePlay(){
+    async OpenNetDisk() {
+        this.isActive(!0);
+        let elm = await N.addTemplate('assets/template/video-netdisk.htm', !0);
+        elm.style.zIndex = '3';
+        elm.classList.add('show');
+        this.Elm.classList.add('hide');
+    }
+    async OpenCaiji() {
+        this.isActive(!0);
+        let elm = await N.addTemplate('assets/template/video-caiji.htm', !0);
+        elm.style.zIndex = '3';
+        elm.classList.add('show');
+        this.Elm.classList.add('hide');
+    }
+    CloseNetDisk() {
+        let elm = document.querySelector('#video-netdisk');
+        this.Elm.hidden = false;
+        elm.classList.remove('show');
+        this.Elm.classList.remove('hide');
+        this.getList().then(e=>elm.remove());
+    }
+    CloseCaiji() {
+        let elm = document.querySelector('#video-caiji');
+        this.Elm.hidden = false;
+        elm.classList.remove('show');
+        this.Elm.classList.remove('hide');
+        this.getList().then(e=>elm.remove());
+    }
+    ClosePlay() {
         let video = document.querySelector('#video-media');
-        if(video&&video.paused){
-            video.pause();
-            video.remove();
+        if (video && video.src) {
+            video.removeAttribute('src');
+            video.load();
         }
-        if(this.hls){
+        if (this.hls) {
             this.hls.destroy();
             delete this.hls;
         }
-        if(this.tsdown){
+        if (this.tsdown) {
             this.tsdown.postMessage('close');
             delete this.tsdown;
         }
-        $.mobile.nav('#video-play','#video-main','slide','right');
-        $('#video-play').navpanel('destroy');
+        this.Elm.hidden = false;
+        this.videoplay.classList.remove('show');
+            this.Elm.classList.remove('hide');
+        this.getList().then(e=>{
+            this.videoplay.remove();
+            delete this.videoplay;
+        });
     }
-    closeVideo(){
-        $.mobile.nav('#video-main','#mainpage','slide','right');
-    }
-    closeCaiji(){
-        $.mobile.nav('#video-caiji','#video-main','slide','right');
-        $('#video-caiji').navpanel('destroy')
-    }
-    async startCaiji(elm){
-        if(elm.disabled)return;
+    async startCaiji(elm) {
+        if (elm.disabled) return;
         elm.disabled = true;
-        $('#video-end-caiji')[0].disabled = false;
+        document.querySelector('#video-end-caiji').disabled = false;
         const worker = await this.openSQL();
-        worker.callMessage = function(data,port){
+        worker.callMessage = function (data, port) {
             console.log(data);
-            if(typeof data === 'string'){
-                $('#video-caiji-log')[0].value += '\n'+data;
+            if (typeof data === 'string') {
+                document.querySelector('#video-caiji-log').value += '\n' + data;
             }
         }
-        $('#video-end-caiji').on('click',async function(){
+        document.querySelector('#video-end-caiji').addEventListener('click', async ()=>{
             await worker.postMethod('save2exit');
-            $.mobile.nav('#video-caiji','#video-main','slide','right');
-            $('#video-caiji').navpanel('destroy')
+            this.CloseCaiji();
         });
-        let url = $('#video-caiji-url').val();
-        let page = $('#video-caiji-page').val();
-        page = page?parseInt(page):1;
-        if(url)localStorage.setItem('video-caiji-url',url);
-        alert(await worker.postMethod('caiji',{url,page}));
-        this.closeCaiji();
+        let url = document.querySelector('#video-caiji-url').value;
+        let page = document.querySelector('#video-caiji-page').value;
+        page = page ? parseInt(page) : 1;
+        if (url) localStorage.setItem('video-caiji-url', url);
+        alert(await worker.postMethod('caiji', { url, page }));
+        this.CloseCaiji();
 
     }
-    async exportID(mediaID){
-        if(mediaID){
+    async exportID(mediaID) {
+        if (mediaID) {
             const worker = await this.openSQL();
-            let blob  = await worker.postMethod('exportID',mediaID);
+            let blob = await worker.postMethod('exportID', mediaID);
             const href = URL.createObjectURL(blob);
-            N.downURL(href,this.mediaTitle+'.json');
+            N.downURL(href, this.mediaTitle + '.json');
             URL.revokeObjectURL(href);
         }
     }
-    async deleteID(mediaID){
-        if(mediaID){
+    async deleteID(mediaID) {
+        if (mediaID) {
             const worker = await this.openSQL();
-            await worker.postMethod('deleteID',mediaID);
+            await worker.postMethod('deleteID', mediaID);
             this.ClosePlay();
             this.getList(this.playdata);
         }
 
     }
-    async playUrl(elm,arg){
+    async playUrl(elm, arg) {
         this.StopEvent(arg);
         let src = decodeURI(elm.getAttribute('data-src'));
         let video = document.querySelector('#video-media');
         video.hidden = false;
-        video.oncanplay = function(){this.play()};
+        video.style.background  = 'url('+video.getAttribute('poster')+') center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
-            video.onended = function(){
-                let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"),v=>decodeURI(v.getAttribute('data-src')));
-                if(srclist.length<=1)return;
-                let pos = srclist.indexOf(this.src) + 1;
-                if(pos<0||pos==srclist.length){
-                    pos = 0;
-                }
-                this.src = srclist[0];
-                this.play();
-            };
-            video.play();
-        }else{
-            if(!self.Hls)await import('https://unpkg.com/hls.js@1.5.14/dist/hls.min.js');
-            if(Hls.isSupported()){
-                if(!this.hls){
+            video.load();
+        } else {
+            if (!self.Hls) await import('https://unpkg.com/hls.js@1.5.14/dist/hls.min.js');
+            if (Hls.isSupported()) {
+                if (!this.hls) {
                     this.hls = new self.Hls();
                     this.hls.attachMedia(video);
                 }
                 this.hls.loadSource(src);
+                /*
                 const V = this;
-                video.onended = function(){
-                    if(!V.hls) return;
-                    let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"),v=>decodeURI(v.getAttribute('data-src')));
-                    if(srclist.length<=1)return;
+                video.onended = function () {
+                    if (!V.hls) return;
+                    let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"), v => decodeURI(v.getAttribute('data-src')));
+                    if (srclist.length <= 1) return;
                     let pos = srclist.indexOf(V.hls.url) + 1;
-                    if(pos<=0||pos==srclist.length){
+                    if (pos <= 0 || pos == srclist.length) {
                         pos = 0;
                     }
                     V.hls.loadSource(srclist[0]);
                     V.hls.attachMedia(video);
                     this.play();
                 };
-                video.play();
+                */
+                video.load();
             }
         }
         elm.parentNode.parentNode.parentNode.open = false;
     }
-    downUrl(elm,arg){
+    downUrl(elm, arg) {
         const V = this;
         this.StopEvent(arg);
-        if(elm.getAttribute('startdown'))return;
-        elm.setAttribute('startdown',true);
+        if (elm.getAttribute('startdown')) return;
+        elm.setAttribute('startdown', true);
         const details = document.createElement('details');
         elm.parentNode.appendChild(details);
         const summary = document.createElement('summary');
@@ -290,41 +327,41 @@ export default class MY_VIDEO{
         details.appendChild(showdata);
         details.open = true;
         this.tsdown = new Worker(self.jspath + 'Worker/downTS.js');
-        this.tsdown.addEventListener('message',function(event){
+        this.tsdown.addEventListener('message', function (event) {
             const data = event.data;
-            if(data){
-                if(data.log){
+            if (data) {
+                if (data.log) {
                     console.log(data.log);
-                }else if(data.info){
+                } else if (data.info) {
                     elm.innerHTML = data.info;
-                }else if(data.result){
+                } else if (data.result) {
                     const href = URL.createObjectURL(data.result);
-                    const filename = elm.getAttribute('title')+' 片段('+data.PathIndex+').ts';
-                    if(data.close){
-                        return N.downURL(href,filename);
+                    const filename = elm.getAttribute('title') + ' 片段(' + data.PathIndex + ').ts';
+                    if (data.close) {
+                        return N.downURL(href, filename);
                     }
-                    const duration = data.duration? '约'+(data.duration>60?Math.ceil(data.duration/6)/10+'分':Math.ceil(data.duration)+'秒'):'';
-                    const textname = elm.getAttribute('title')+'-片段('+data.PathIndex+')';
+                    const duration = data.duration ? '约' + (data.duration > 60 ? Math.ceil(data.duration / 6) / 10 + '分' : Math.ceil(data.duration) + '秒') : '';
+                    const textname = elm.getAttribute('title') + '-片段(' + data.PathIndex + ')';
                     const p = document.createElement('p');
                     p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
-                    p.setAttribute('data-href',href);
-                    p.setAttribute('data-name',filename);
+                    p.setAttribute('data-href', href);
+                    p.setAttribute('data-name', filename);
                     p.classList.add('p-block');
                     p.style.margin = '15px 0px';
                     showdata.appendChild(p);
-                    p.addEventListener('click',function(){
-                        N.downURL(this.getAttribute('data-href'),this.getAttribute('data-name'));
+                    p.addEventListener('click', function () {
+                        N.downURL(this.getAttribute('data-href'), this.getAttribute('data-name'));
                     });
                     delete data.result;
-                }else if(data.close){
+                } else if (data.close) {
                     elm.removeAttribute('startdown');
-                    if(data.ready)elm.innerHTML = data.ready;
+                    if (data.ready) elm.innerHTML = data.ready;
                     delete V.tsdown;
                     this.terminate();
                 }
             }
         });
-        this.tsdown.addEventListener('error',function(event){
+        this.tsdown.addEventListener('error', function (event) {
             elm.innerHTML = event.message;
         });
         let src = decodeURI(elm.getAttribute('data-down'));

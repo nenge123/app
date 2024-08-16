@@ -18,13 +18,13 @@ self.N = new class NengeCommon{
             request.send(null);
         });
     }
-    async addTemplate(url,bool){
+    async addTemplate(url){
         const elms = await N.template(url);
-        const content = bool?document.body:document.querySelector('#other');
+        const content = document.body;
         elms.forEach(elm=>{
             content.appendChild(elm);
         });
-        $.parser.parse(bool?undefined:'#other');
+        //$.parser.parse();
         return elms[0];
     }
     upload(fn,accept){
@@ -81,12 +81,15 @@ self.N = new class NengeCommon{
                 console.log(data);
             });
             await worker.setMethod();
-            console.log(await worker.ready);
-            await worker.callMethod('writeFile','0.ts',new Uint8Array(await files[0].arrayBuffer()));
-            await worker.callMethod('exec',['-i','0.ts','a.mp4'],-1);
-            const file = await worker.callMethod('readFile','a.mp4');
+            await worker.ready;
+            console.log(worker);
+            //
+            await worker.callMethod('writeFile','0.mp4',new Uint8Array(await files[0].arrayBuffer()));
+            await worker.callMethod('exec',['-i','0.mp4','-preset','ultrafast','a.mov'],-1);
+            const file = await worker.callMethod('readFile','a.mov');
+            console.log(file);
             worker.terminate();
-            this.downURL(URL.createObjectURL(new Blob([file])),'a.mp4');
+            if(file.length)this.downURL(URL.createObjectURL(new Blob([file])),'a.mov');
 
         });
     }
@@ -165,6 +168,28 @@ self.N = new class NengeCommon{
             return this.modules.get(module)[method](...arg);
         }
     }
+    bindMethod(elm){
+        Array.from(elm.querySelectorAll('[data-method]'),elm=>{
+            elm.addEventListener('click',function(event){
+                if(this.getAttribute('data-loading')) return;
+                N.StopEvent(event);
+                let method = this.getAttribute('data-method');
+                N.callMethod(method,this,event);    
+            });
+        });
+    }
+    StopEvent(event){
+        if(event instanceof Event){
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
 
 };
 self.N.methods = methods;
+window.onresize = function(event){
+    document.body.style.setProperty('--inner-width',window.innerWidth+'px');
+    document.body.style.setProperty('--inner-height',window.innerHeight+'px');
+};
+window.onresize();
+N.bindMethod(document.querySelector('#start-page '));

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" type="text/css" href="./assets/css/style.css?hhh">
+    <title>Document</title>
+    <style type="text/css">body{margin: 0;padding: 0;}</style>
+</head>
+<body>
+    <video poster="https://www.imgikzy.com/upload/vod/20221008-13/50d91de30014fe1ef9509de8bde45ced.jpg" style="background-image: url(https://www.imgikzy.com/upload/vod/20221008-13/50d91de30014fe1ef9509de8bde45ced.jpg);background-size:cover;" width="100%" controls></video>
+    <button type="button" id="play">播放</button>
+    <button type="button" id="stop">暂停</button>
+    <button type="button" id="next">下一集</button>
+    <script>
+        let video = document.querySelector('video');
+        let play = document.querySelector('#play');
+        let stop = document.querySelector('#stop');
+        let next = document.querySelector('#next');
+        play.onclick = e=>{
+            video.src = 'https://bfikuncdn.com/20221003/YTYhjMIY/index.m3u8';
+            video.play();
+        };
+        stop.onclick = e=>{
+            video.removeAttribute('src');
+            video.load()
+        };
+        next.onclick = e=>{
+            stop.onclick();
+            video.src = 'https://bfikuncdn.com/20221008/usjzlYZo/index.m3u8';
+            video.load();
+        };
+    </script>
+</body>
+</html>

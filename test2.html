@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="x-content-type-options" content="nosniff" />
@@ -13,24 +12,30 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="initial-scale=1.0,width=device-width,user-scalable=no,viewport-fit=cover">
+    <link rel="stylesheet" type="text/css" href="./assets/vendor/easyui/themes/bootstrap/easyui.css">
+    <link rel="stylesheet" type="text/css" href="./assets/vendor/easyui/themes/mobile.css">
+    <link rel="stylesheet" type="text/css" href="./assets/vendor/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="./assets/vendor/easyui/themes/color.css">
     <link rel="stylesheet" type="text/css" href="./assets/css/style.css?hhh">
+    <script type="text/javascript" src="./assets/vendor/easyui/jquery.min.js"></script>
+    <script type="text/javascript" src="./assets/vendor/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="./assets/vendor/easyui/jquery.easyui.mobile.js"></script>
 
     <title>能哥网</title>
 </head>
-
 <body>
     <div id="start-page" class="full-page">
         <header>能哥网</header>
         <main>
             <ul class="app-list">
                 <li>
-                    <div class="btn-block" data-method="openVideo" title="在线视频">
+                    <div class="btn-block" onclick="N.callMethod('openVideo')" title="在线视频">
                         <img src="./assets/images/icon-video.svg">
                         <p>在线视频</p>
                     </div>
                 </li>
                 <li>
-                    <div class="btn-block" data-method="refresh" title="刷新脚本">
+                    <div class="btn-block" onclick="N.callMethod('refresh')" title="刷新脚本">
                         <img src="./assets/images/icon-refresh.svg">
                         <p>刷新脚本</p>
                     </div>
@@ -39,14 +44,17 @@
         </main>
         <footer>
             <p class="p-block"><span>资源数据来自于网络,如有冒犯请及时告知!</span></p>
-            <p class="p-block"><span>当前缓存版本</span><b>2024-08-17 19:11</b></p>
+            <p class="p-block"><span>当前缓存版本</span><b>2024-08-14 19:11</b></p>
             <p class="p-block"><a href="https://github.com/nenge123/app/" target="_blank">源代码</a></p>
         </footer>
 
     </div>
-    <script type="module">
-        import './assets/js/Module/common.js';
+    <script>
+        window.onresize = function(event){
+            document.body.style.setProperty('--inner-width',window.innerWidth+'px');
+            document.body.style.setProperty('--inner-height',window.innerHeight+'px');
+        };
+        window.onresize();
     </script>
 </body>
-
 </html>

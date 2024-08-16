@@ -1,15 +1,16 @@
-<div id="video-caiji" class="easyui-navpanel" data-option="maximized:true">
-    <header>
-        <div class="m-toolbar">
-            <div class="m-title">资源采集</div>
-            <div class="m-left"><button class="easyui-linkbutton m-back" data-options="onClick:()=>N.runModule('myVideo','closeCaiji')">返回</button>
-            </div>
-        </div> 
+<div id="video-caiji" class="full-page div-page">
+    <header class="div-header" style="height:42px;">
+        <div class="left">
+            <button class="btn-flex btn-back" onclick="N.runModule('myVideo','CloseCaiji')" type="button"><span>返回</span></button>
+        </div>
+        <div class="center">资源采集</div>
     </header>
-    <p class="flex-left-right"><label>采集地址:</label><input id="video-caiji-url" class="textbox first" style="padding: 3px 5px;" type="text" value=""></p>
-    <p class="flex-left-right"><label>起始页:</label><input id="video-caiji-page" class="textbox first" type="number" value="1" style="padding: 3px 5px;"></p>
-    <p><button type="button" onclick="N.runModule('myVideo','startCaiji',this)">开始采集</button></p>
-    <p><button id="video-end-caiji" type="button" disabled>终止采集</button></p>
-    <p>日志:<br><textarea id="video-caiji-log" style="width:98%;min-height: 300px;"></textarea></p>
-    <p>采集地址请用<code>{page}</code>作为起始页参数</p>
+    <main>
+        <p class="flex-left-right"><label>采集地址:</label><input id="video-caiji-url" class="textbox first" style="padding: 3px 5px;" type="text" value=""></p>
+        <p class="flex-left-right"><label>起始页:</label><input id="video-caiji-page" class="textbox first" type="number" value="1" style="padding: 3px 5px;"></p>
+        <p><button type="button" onclick="N.runModule('myVideo','startCaiji',this)">开始采集</button></p>
+        <p><button id="video-end-caiji" type="button" disabled>终止采集</button></p>
+        <p>日志:<br><textarea id="video-caiji-log" style="width:98%;min-height: 300px;"></textarea></p>
+        <p>采集地址请用<code>{page}</code>作为起始页参数</p>
+    </main>
 </div>

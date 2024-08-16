@@ -1,9 +1,21 @@
 import '../lib/WorkerApp.js';
+/**
+ * js:https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm/ffmpeg-core.js
+ * wasm:https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm/ffmpeg-core.wasm
+ * must support SharedArrayBuffer
+ * wasm-length:32609891
+ */
 import Module from 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js';
 const AppMpeg = new class WorkerAppFFmpeg extends WorkerApp {
+    ports = [];
     methods = new Map(
         Object.entries({
-            async _Initialized(back) {
+            async _Initialized(back,port) {
+                if(this.ffmpeg){
+                    //shareworker push port
+                    //this.ports.push(port);
+                    return back(true);
+                }
                 const response = await fetch('https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm');
                 if(!response||!response.body){
                     throw 'net error';
@@ -18,18 +30,32 @@ const AppMpeg = new class WorkerAppFFmpeg extends WorkerApp {
                         break;
                     }
                     loaded += value.byteLength;
-                    self.postMessage({method:'wasmload',loaded,total,speed:value.byteLength});
+                    port&&port.postMessage({method:'wasmload',loaded,total,speed:value.byteLength});
                     chunk.push(value);
                 }
                 const wasmBinary =  await (new Blob(chunk)).arrayBuffer();
                 const ffmpeg = await Module({wasmBinary});
                 await ffmpeg.ready;
                 delete ffmpeg.wasmBinary;
-                ffmpeg.setLogger(data=> self.postMessage({method:'log',message:data.message}));
-                ffmpeg.setProgress(data=> self.postMessage({method:'progress',progress:data.progress,time:data.time}));
+                if(self.postMessage){
+                    //worker
+                    ffmpeg.setLogger(data=>self.postMessage({method:'log',message:data.message}));
+                    ffmpeg.setProgress(data=>self.postMessage({method:'progress',progress:data.progress,time:data.time}));
+                }else{
+                    //shareWorker
+                    ffmpeg.setLogger(data=>this.callMethod('_log',{method:'log',message:data.message}));
+                    ffmpeg.setProgress(data=>this.callMethod('_progress',{method:'progress',progress:data.progress,time:data.time}));
+                }
                 this.ffmpeg = ffmpeg;
                 this.FS = ffmpeg.FS;
                 back(true);
+            },
+            _postMessage(msg,trf){
+                if(self.postMessage){
+                    self.postMessage(msg,trf);
+                }else{
+                    this.ports.forEach(port=>port.postMessage(msg,trf));
+                }
             },
             async writeFile(data,port){
                 const [file,contents] = data.result;
@@ -38,6 +64,10 @@ const AppMpeg = new class WorkerAppFFmpeg extends WorkerApp {
             },
             exec(data,port){
                 const [args,timeout] = data.result;
+                if(data.log===true){
+                    this.methods.set('_log',data=>port.postMessage(data));
+                    this.methods.set('_progress',data=>port.postMessage(data));
+                }
                 this.ffmpeg.setTimeout(timeout);
                 this.ffmpeg.exec(...args);
                 const ret = this.ffmpeg.ret;
