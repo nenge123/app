@@ -265,6 +265,7 @@ export default class MY_VIDEO {
     async playUrl(elm, arg) {
         this.StopEvent(arg);
         const playElm = document.querySelector('#video-play');
+        const video = playElm.querySelector('#video-media');
         let src = decodeURI(elm.getAttribute('data-src'));
         // center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
