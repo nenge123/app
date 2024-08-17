@@ -275,6 +275,7 @@ export default class MY_VIDEO {
         const video = playElm.querySelector('#video-media');
         let src = decodeURI(elm.getAttribute('data-src'));
         playElm.querySelector('header .center').innerHTML = elm.innerHTML;
+        playElm.querySelector('main').scrollTop = 0;
         // center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
@@ -305,7 +306,7 @@ export default class MY_VIDEO {
                 video.play();
             }
         }
-        elm.parentNode.parentNode.parentNode.open = false;
+        //elm.parentNode.parentNode.parentNode.open = false;
     }
     downUrl(elm, arg) {
         const V = this;
