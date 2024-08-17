@@ -184,6 +184,12 @@ self.N = new class NengeCommon{
             event.stopPropagation();
         }
     }
+    hide(){
+        document.querySelector('#start-page').classList.add('hide');
+    }
+    show(){
+        document.querySelector('#start-page').classList.remove('hide');
+    }
 
 };
 self.N.methods = methods;

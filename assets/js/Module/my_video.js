@@ -25,8 +25,8 @@ export default class MY_VIDEO {
             this.Elm = elm;
         }
         this.setEvent();
-        this.getList();
         this.show();
+        this.getList();
     }
     getdata() {
         return this.playdata;
@@ -42,12 +42,20 @@ export default class MY_VIDEO {
         return this.playdata;
     }
     hide(){
-        this.Elm.classList.remove('show');
-        document.querySelector('#start-page').hidden = false;
+        this.Elm.classList.add('hide');
+        N.show();
     }
     show(){
-        this.Elm.classList.add('show');
-        document.querySelector('#start-page').hidden = true;
+        this.Elm.classList.remove('hide');
+        N.hide();
+    }
+    leftHide(bool){
+        this.Elm.classList[bool?'add':'remove']('lefthide');
+    }
+    loading(){
+        this.Elm.querySelector('main').innerHTML = 'loading...';
+        this.Elm.querySelector('footer').innerHTML = 'loading...';
+        this.Elm.classList.add('loading');
     }
     async setEvent() {
         const V = this;
@@ -74,9 +82,7 @@ export default class MY_VIDEO {
                         const keylist = Object.keys(V.tablelist.data);
                         const insertkeys = mode === 1 ? keylist.slice(1) : keylist;
                         N.upload(async files => {
-                            V.Elm.querySelector('main').innerHTML = 'loading...';
-                            V.Elm.querySelector('footer').innerHTML = 'loading...';
-                            V.isActive(!0);
+                            V.loading();
                             for (const file of files) {
                                 const worker = await V.openSQL();
                                 const mime = await file.slice(0, 2).text();
@@ -91,10 +97,10 @@ export default class MY_VIDEO {
                         });
                         break;
                     case 'netdisk':
-                        V.OpenNetDisk();
+                        V.OpenPage('netdisk');
                         break;
                     case 'caiji':
-                        await V.OpenCaiji();
+                        await V.OpenPage('caiji');
                         let url = localStorage.getItem('video-caiji-url');
                         if (url) document.querySelector('#video-caiji-url').value = url;
                         break;
@@ -103,7 +109,6 @@ export default class MY_VIDEO {
         });
     }
     async openSQL() {
-        this.isActive(!0);
         const worker = new MyWorker({ url: self.jspath + 'Worker/WorkerAppVideo.js', name: 'SQLite-worker', install: true });
         await worker.ready;
         await worker.postMethod('setInfo', { filepath: this.filepath, tablelist: this.tablelist });
@@ -114,22 +119,18 @@ export default class MY_VIDEO {
         await worker.setMethod();
         return worker;
     }
-    isActive(bool) {
-        this.Elm.classList[bool ? 'add' : 'remove']('noevent');
-    }
     async getList(arg) {
-        this.Elm.querySelector('main').innerHTML = 'loading...';
-        this.Elm.querySelector('footer').innerHTML = 'loading...';
+        this.loading();
         const worker = await this.openSQL();
         arg = arg ? arg : this.playdata;
         arg.maxlength = 10;
         arg.limit = 30;
         let result = await worker.postMethod('Html2Video', arg);
+        this.Elm.classList.remove('loading');
         this.maxpage = result.maxpage;
         this.Elm.querySelector('main').innerHTML = result.html;
         this.Elm.querySelector('footer').innerHTML = result.pageHtml;
         this.Elm.querySelector('main').scrollTop = 0;
-        this.isActive();
     }
     StopEvent(arg) {
         if (arg && arg[0]) {
@@ -173,66 +174,52 @@ export default class MY_VIDEO {
 
     }
     async OpenPlay(id, arg, elm) {
+        const V = this;
         this.StopEvent(arg);
-        this.isActive(!0);
-        let videoplay = await N.addTemplate('assets/template/video-play.htm', !0);
-        videoplay.style.zIndex = '3';
-        const worker = await this.openSQL();
-        videoplay.querySelector('main').innerHTML = await worker.postMethod('Html2Play', id);
-        videoplay.classList.add('show');
-        this.Elm.classList.add('hide');
-        this.mediaTitle = elm.getAttribute('title');
-        this.videoplay = videoplay;
-    }
-    async OpenNetDisk() {
-        this.isActive(!0);
-        let elm = await N.addTemplate('assets/template/video-netdisk.htm', !0);
-        elm.style.zIndex = '3';
-        elm.classList.add('show');
-        this.Elm.classList.add('hide');
-    }
-    async OpenCaiji() {
-        this.isActive(!0);
-        let elm = await N.addTemplate('assets/template/video-caiji.htm', !0);
-        elm.style.zIndex = '3';
-        elm.classList.add('show');
-        this.Elm.classList.add('hide');
-    }
-    CloseNetDisk() {
-        let elm = document.querySelector('#video-netdisk');
-        this.Elm.hidden = false;
-        elm.classList.remove('show');
-        this.Elm.classList.remove('hide');
-        this.getList().then(e=>elm.remove());
-    }
-    CloseCaiji() {
-        let elm = document.querySelector('#video-caiji');
-        this.Elm.hidden = false;
-        elm.classList.remove('show');
-        this.Elm.classList.remove('hide');
-        this.getList().then(e=>elm.remove());
-    }
-    ClosePlay() {
-        let video = document.querySelector('#video-media');
-        if (video && video.src) {
-            video.removeAttribute('src');
-            video.load();
-        }
-        if (this.hls) {
-            this.hls.destroy();
-            delete this.hls;
-        }
-        if (this.tsdown) {
-            this.tsdown.postMessage('close');
-            delete this.tsdown;
-        }
-        this.Elm.hidden = false;
-        this.videoplay.classList.remove('show');
-            this.Elm.classList.remove('hide');
-        this.getList().then(e=>{
-            this.videoplay.remove();
-            delete this.videoplay;
+        await V.OpenPage('play',function(){
+            const playElm = document.querySelector('#video-play');
+            let video = playElm.querySelector('#video-media');
+            if (video && video.src) {
+                video.removeAttribute('src');
+                video.load();
+            }
+            if (this.hls) {
+                this.hls.destroy();
+                delete this.hls;
+            }
+            if (this.tsdown) {
+                this.tsdown.postMessage('close');
+                delete this.tsdown;
+            }
+            playElm.classList.add('hide');
+            V.leftHide();
+
         });
+        const playElm = document.querySelector('#video-play');
+        const worker = await this.openSQL();
+        playElm.querySelector('main').innerHTML = await worker.postMethod('Html2Play', id);
+        const videoELM = playElm.querySelector('#video-media');
+        if(videoELM.getAttribute('poster')){
+            videoELM.style.backgroundImage  = 'url('+videoELM.getAttribute('poster')+')';
+        }
+        this.mediaTitle = elm.getAttribute('title');
+        this.leftHide(true);
+        playElm.classList.remove('hide');
+    }
+    async OpenPage(name,fn) {
+        const V = this;
+        let playElm = document.querySelector('#video-'+name);
+        if(!playElm){
+            playElm = await N.addTemplate('assets/template/video-'+name+'.htm', !0);
+            playElm.querySelector('[data-method="back"]').addEventListener('click',fn||function(){
+                playElm.classList.add('hide');
+                V.leftHide();
+            });
+        }
+        if(!fn){
+            this.leftHide(true);
+            playElm.classList.remove('hide');
+        }
     }
     async startCaiji(elm) {
         if (elm.disabled) return;
@@ -277,10 +264,9 @@ export default class MY_VIDEO {
     }
     async playUrl(elm, arg) {
         this.StopEvent(arg);
+        const playElm = document.querySelector('#video-play');
         let src = decodeURI(elm.getAttribute('data-src'));
-        let video = document.querySelector('#video-media');
-        video.hidden = false;
-        video.style.background  = 'url('+video.getAttribute('poster')+') center center no-repeat cover';
+        // center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
             video.play();

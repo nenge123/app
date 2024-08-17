@@ -1,11 +1,6 @@
 img {
     max-width: 100%;
 }
-
-video {
-    width: 100%;
-    max-height: 400px;
-}
 [hidden]{
     display: none !important;
 }
@@ -73,6 +68,10 @@ body {
 #video-media {
     width: 100%;
     margin: 0px auto;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    aspect-ratio: 1080 / 720;
 }
 
 .window {
@@ -208,12 +207,14 @@ body {
     justify-items: stretch;
     align-items: stretch;
     align-content: stretch;
+    transition: transform .3s ease-in-out, opacity .3s ease-in-out;
 }
 
 .full-page>main {
     grid-area: center;
     overflow: hidden;
     overflow-y: auto;
+    padding-bottom: 100px;
 }
 
 .full-page>header {
@@ -228,13 +229,23 @@ body {
     border-top: 1px solid #8f8f8f;
     box-shadow: 0px -1px 8px #0000007d;
 }
-
+@media (any-hover: none) and (orientation:portrait) {
+    .full-page>footer{
+        padding-bottom: 30px;
+    }
+}
 #start-page {
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-image: url(https://lishijieacg.co/wp-content/uploads/2023/03/1678797436-d7b8f15e815a6e5.jpg);
     background-size: cover;
     background-position: top center;
+}
+#start-page.hide{
+    transform: translateX(-100%);
+    position: absolute;
+    left: 0px;
+    top: 0px;
 }
 
 #start-page>header {
@@ -262,35 +273,24 @@ body {
 .div-page {
     position: absolute;
     top: 0px;
-    left: 100%;
+    left:0px;
     right: 0px;
     bottom: 0px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all .3s ease-in-out;
     background-position: center center;
+    transform: translateX(0);
 }
-.div-page.show{
-    left: 0px;
-    visibility: visible;
-    opacity: 1;
+.div-page.hide{
+    transform: translateX(100%);
 }
-.loading,.div-page.noevent{
+.div-page.lefthide{
+    transform: translateX(-100%);
+}
+.loading,.div-page.loading{
+    pointer-events: none;
     background-color: #fff;
     background-image: url(../images/loading.gif);
     background-repeat: no-repeat;
     background-position: center center;
-}
-.div-page.noevent {
-    pointer-events: none;
-    opacity: .8;
-    transition: all .8s ease-in-out;
-    transition: all .8s ease-in-out;
-}
-.div-page.hide{
-    opacity: 0;
-    visibility: hidden;
-    transition: all 1s ease-in-out;
 }
 .div-page>header {
     padding: 5px;
@@ -348,6 +348,7 @@ body {
     height: 12px;
     content: '';
     margin-top: -10%;
+    
 }
 .btn-drop~.submenu{
     display: none;
@@ -394,4 +395,7 @@ body {
 #video-main{
     z-index: 2;
     background-color: #ffffffab;
+}
+#video-play,#video-netdisk,#video-caiji{
+    z-index: 3;
 }
