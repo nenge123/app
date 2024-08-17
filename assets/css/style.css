@@ -302,7 +302,7 @@ body {
     box-shadow: 0px 1px 8px #0000007d;
     color: #242539;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-areas: "left center right";
     justify-items: stretch;
     align-items: center;
@@ -394,6 +394,9 @@ body {
 .div-header>.center {
     grid-area: center;
     text-align: center;
+    font-size: 12px;
+    overflow: hidden;
+    text-emphasis: '...';
 }
 #video-main{
     z-index: 2;
