@@ -188,7 +188,19 @@ self.N = new class NengeCommon{
         document.querySelector('#start-page').classList.add('hide');
     }
     show(){
+        this.noHidden();
         document.querySelector('#start-page').classList.remove('hide');
+    }
+    noHidden(){
+        document.querySelector('#start-page').hidden = false;
+    }
+    bindTransition(elm){
+        elm.addEventListener('transitionend',function(e){
+            console.log(e);
+            if(this.classList.contains('hide')||this.classList.contains('lefthide')){
+                this.hidden = true;
+            }
+        });
     }
 
 };
@@ -199,3 +211,4 @@ window.onresize = function(event){
 };
 window.onresize();
 N.bindMethod(document.querySelector('#start-page '));
+N.bindTransition(document.querySelector('#start-page '));

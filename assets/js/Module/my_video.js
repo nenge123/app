@@ -46,10 +46,12 @@ export default class MY_VIDEO {
         N.show();
     }
     show(){
+        this.Elm.hidden = false;
         this.Elm.classList.remove('hide');
         N.hide();
     }
     leftHide(bool){
+        if(!bool)this.Elm.hidden = false;
         this.Elm.classList[bool?'add':'remove']('lefthide');
     }
     loading(){
@@ -214,11 +216,13 @@ export default class MY_VIDEO {
         let playElm = document.querySelector('#video-'+name);
         if(!playElm){
             playElm = await N.addTemplate('assets/template/video-'+name+'.htm', !0);
+            N.bindTransition(playElm);
             playElm.querySelector('[data-method="back"]').addEventListener('click',fn||function(){
                 playElm.classList.add('hide');
                 V.leftHide();
             });
         }
+        playElm.hidden = false;
         if(!fn){
             this.leftHide(true);
             playElm.classList.remove('hide');

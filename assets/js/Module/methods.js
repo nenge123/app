@@ -4,6 +4,7 @@ export default new Map(Object.entries({
             elm.setAttribute('data-loading',1);
             const {default:MY_VIDEO} = await  import('./my_video.js'); 
             const video = await N.addTemplate('assets/template/video-index.htm',!0);
+            N.bindTransition(video);
             const myVideo = new MY_VIDEO('video-play-list',video);
             this.modules.set('myVideo',myVideo);
             self.myVideo = myVideo;

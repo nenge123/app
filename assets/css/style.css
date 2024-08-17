@@ -191,10 +191,14 @@ body {
 .app-list>li>.btn-block {
     padding: 10px;
 }
-
 .full-page {
-    height: var(--inner-height);
-    width: var(--inner-width);
+    position: absolute;
+    left: 0px;
+    right:0px;
+    bottom: 0px;
+    top: 0px;
+    height:100%;
+    width:100%;
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: none;
@@ -207,7 +211,9 @@ body {
     justify-items: stretch;
     align-items: stretch;
     align-content: stretch;
-    transition: transform .3s ease-in-out, opacity .3s ease-in-out;
+    transition: transform .3s ease-in-out, opacity .3s ease-in-out,display .5s ease-in-out;
+    background-position: center center;
+    transform: translateX(0);
 }
 
 .full-page>main {
@@ -236,7 +242,7 @@ body {
     }
 }
 #start-page {
-    background-attachment: fixed;
+    z-index: 1;
     background-repeat: no-repeat;
     background-image: url(https://lishijieacg.co/wp-content/uploads/2023/03/1678797436-d7b8f15e815a6e5.jpg);
     background-size: cover;
@@ -244,9 +250,6 @@ body {
 }
 #start-page.hide{
     transform: translateX(-120%);
-    position: absolute;
-    left: 0px;
-    top: 0px;
 }
 
 #start-page>header {
@@ -277,8 +280,6 @@ body {
     left:0px;
     right: 0px;
     bottom: 0px;
-    background-position: center center;
-    transform: translateX(0);
 }
 .div-page.hide{
     transform: translateX(120%);
