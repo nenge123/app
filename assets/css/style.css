@@ -301,7 +301,7 @@ body {
     box-shadow: 0px 1px 8px #0000007d;
     color: #242539;
     display: grid;
-    grid-template-columns: max-content auto max-content;
+    grid-template-columns: 1fr auto 1fr;
     grid-template-areas: "left center right";
     justify-items: stretch;
     align-items: center;
@@ -351,7 +351,7 @@ body {
     margin-top: -10%;
     
 }
-.btn-drop~.submenu{
+#video-submenu{
     display: none;
     list-style: none;
     position: fixed;
@@ -369,19 +369,20 @@ body {
     justify-content: space-around;
 
 }
-.btn-drop~.submenu li{
+#video-submenu li{
     display: flex;
     margin: 10px;
     align-items: center;
 }
-.btn-drop~.submenu li img{
+#video-submenu li img{
     width: 48px;
-}.btn-drop~.submenu li p{
+}
+#video-submenu li p{
     margin: 0px;
     padding: 0px;
 }
-.btn-drop:hover~.submenu,
-.btn-drop~.submenu:hover {
+.btn-drop:hover~#video-submenu,
+.btn-drop~#video-submenu:hover {
     display: flex;
 }
 .div-header>.right {

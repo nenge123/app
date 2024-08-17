@@ -105,6 +105,9 @@ export default class MY_VIDEO {
                         if (url) document.querySelector('#video-caiji-url').value = url;
                         break;
                 }
+                document.querySelector('#video-submenu').hidden = true;
+                V.Elm.querySelector('main').focus();
+                setTimeout(()=> document.querySelector('#video-submenu').hidden = false,1);
             });
         });
     }
@@ -267,6 +270,7 @@ export default class MY_VIDEO {
         const playElm = document.querySelector('#video-play');
         const video = playElm.querySelector('#video-media');
         let src = decodeURI(elm.getAttribute('data-src'));
+        playElm.querySelector('header .center').innerHTML = elm.innerHTML;
         // center center no-repeat cover';
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = src;
