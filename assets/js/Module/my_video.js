@@ -318,25 +318,27 @@ export default class MY_VIDEO {
                 } else if (data.result) {
                     console.log(data);
                     const filename = elm.getAttribute('title') + ' 片段';
-                    Array.from(data.result,(entry,index)=>{
-                        console.log(entry);
-                        const href = URL.createObjectURL(entry[1]);
-                        const downname = filename+index+'.ts';
-                        const duration = entry[0] ? '约' + (entry[0] > 60 ? Math.ceil(entry[0] / 6) / 10 + '分' : Math.ceil(entry[0]) + '秒') : '';
-                        const textname = elm.getAttribute('title') + '-片段(' + index + ')';
-                        details.appendChild(document.createElement('br'));
-                        const p = document.createElement('p');
-                        p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
-                        p.setAttribute('data-href', href);
-                        p.setAttribute('data-name', downname);
-                        p.classList.add('p-block');
-                        p.style.margin = '15px 0px';
-                        details.appendChild(p);
-                        p.addEventListener('click', function () {
-                            N.downURL(this.getAttribute('data-href'), this.getAttribute('data-name'));
+                    if(data.result instanceof Array){
+                        Array.from(data.result,(entry,index)=>{
+                            console.log(entry);
+                            const href = URL.createObjectURL(entry[1]);
+                            const downname = filename+index+'.ts';
+                            const duration = entry[0] ? '约' + (entry[0] > 60 ? Math.ceil(entry[0] / 6) / 10 + '分' : Math.ceil(entry[0]) + '秒') : '';
+                            const textname = elm.getAttribute('title') + '-片段(' + index + ')';
+                            details.appendChild(document.createElement('br'));
+                            const p = document.createElement('p');
+                            p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
+                            p.setAttribute('data-href', href);
+                            p.setAttribute('data-name', downname);
+                            p.classList.add('p-block');
+                            p.style.margin = '15px 0px';
+                            details.appendChild(p);
+                            p.addEventListener('click', function () {
+                                N.downURL(this.getAttribute('data-href'), this.getAttribute('data-name'));
+                            });
                         });
-                    });
-                    delete data.result;
+                        delete data.result;
+                    }
                     this.terminate();
                 } else if (data.close) {
                     elm.removeAttribute('startdown');
