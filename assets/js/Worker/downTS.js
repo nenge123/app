@@ -170,7 +170,7 @@ async function downTS(event){
             if (frag.key&&frag.key.href) {
                 if(!bufferChunks[frag.key.href]) bufferChunks[frag.key.href] = {duration:0,data:[]};
                 let iv = createInitializationVector(length).buffer;
-                if(self.crypto){
+                if(0&&self.crypto){
                     if(!AesKEY[frag.key.href]){
                         AesKEY[frag.key.href] = await crypto.subtle.importKey('raw',await (await fetch(frag.key.href)).arrayBuffer(),"AES-CBC",false,['decrypt','encrypt']);
                     }
