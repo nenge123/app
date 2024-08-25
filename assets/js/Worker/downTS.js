@@ -153,26 +153,27 @@ async function downTS(event) {
         if (stopdown) break;
         if (databuf && databuf.byteLength) {
             if (frag.key && frag.key.href) {
-                if (!bufferChunks[frag.key]) bufferChunks[frag.key] = { duration: 0, data: [] };
+                const keyhref = frag.key.href;
+                if (!bufferChunks[keyhref]) bufferChunks[keyhref] = { duration: 0, data: [] };
                 let iv = createInitializationVector(length).buffer;
                 if (self.crypto && self.crypto.subtle && self.crypto.subtle.importKey && self.crypto.subtle.decrypt) {
-                    if (!AesKEY[frag.key]) {
-                        AesKEY[frag.key] = await crypto.subtle.importKey('raw', await (await fetch(frag.key.href)).arrayBuffer(), "AES-CBC", false, ['decrypt', 'encrypt']);
+                    if (!AesKEY[keyhref]) {
+                        AesKEY[keyhref] = await crypto.subtle.importKey('raw', await (await fetch(frag.key.href)).arrayBuffer(), "AES-CBC", false, ['decrypt', 'encrypt']);
                     }
-                    databuf = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, AesKEY[frag.key], databuf);
+                    databuf = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, AesKEY[keyhref], databuf);
 
                 } else {
-                    if (!AesKEY[frag.key]) {
+                    if (!AesKEY[keyhref]) {
                         let buf = await (await fetch(frag.key.href)).arrayBuffer();
                         let aes = new AESDecryptor();
                         aes.constructor();
                         aes.expandKey(buf);
-                        AesKEY[frag.key] = aes;
+                        AesKEY[keyhref] = aes;
                     }
-                    databuf = AesKEY[frag.key].decrypt(databuf, 0, iv, true);
+                    databuf = AesKEY[keyhref].decrypt(databuf, 0, iv, true);
                 }
-                bufferChunks[frag.key]['duration'] += parseFloat(frag.duration);
-                bufferChunks[frag.key]['data'].push(databuf);
+                bufferChunks[keyhref]['duration'] += parseFloat(frag.duration);
+                bufferChunks[keyhref]['data'].push(databuf);
             } else {
                 if (!bufferChunks['nokey']) bufferChunks['nokey'] = { duration: 0, data: [] };
                 bufferChunks['nokey']['duration'] += parseFloat(frag.duration);

@@ -316,11 +316,9 @@ export default class MY_VIDEO {
                 } else if (data.info) {
                     elm.innerHTML = data.info;
                 } else if (data.result) {
-                    console.log(data);
                     const filename = elm.getAttribute('title') + ' 片段';
                     if(data.result instanceof Array){
                         Array.from(data.result,(entry,index)=>{
-                            console.log(entry);
                             const href = URL.createObjectURL(entry[1]);
                             const downname = filename+index+'.ts';
                             const duration = entry[0] ? '约' + (entry[0] > 60 ? Math.ceil(entry[0] / 6) / 10 + '分' : Math.ceil(entry[0]) + '秒') : '';

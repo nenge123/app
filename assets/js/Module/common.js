@@ -196,7 +196,6 @@ self.N = new class NengeCommon{
     }
     bindTransition(elm){
         elm.addEventListener('transitionend',function(e){
-            console.log(e);
             if(this.classList.contains('hide')||this.classList.contains('lefthide')){
                 this.hidden = true;
             }
