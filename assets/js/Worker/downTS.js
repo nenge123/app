@@ -4,8 +4,10 @@ function removePadding(i){const t=i.byteLength,e=t&&new DataView(i).getUint8(t-1
 
 let urlmap;
 let origin;
-let chunks = [];
+let chunksDuration = 0;
+let chunksData = [];
 let PathIndex = 1;
+const bufferChunks = {};
 const KeyBufferList = {};
 const AESLIST = {};
 function read_path(url){
@@ -33,6 +35,10 @@ async function ajax(url,istext,progress){
         const chunk = [];
         let havesize = 0;
         while(true){
+            if(stopdown){
+                reader.cancel();
+                break;
+            }
             const { done, value } = await reader.read();
             if(done){
                 break;
@@ -44,23 +50,6 @@ async function ajax(url,istext,progress){
         return await (new Blob(chunk)).arrayBuffer();
     }
     return new ArrayBuffer(0);
-    return new Promise(back=>{
-        let request = new XMLHttpRequest;
-        request.addEventListener('readystatechange',function(event){
-            if(request.readyState===request.DONE){
-                back(request.response);
-            }
-        });
-        request.speed = 0;
-        progress instanceof Function&&request.addEventListener('progress',function(e){
-            if(!request.speed)request.speed = e.loaded;
-            else request.speed = e.loaded - request.speed;
-            progress(e.loaded, e.total,request.speed);
-        });
-        request.responseType = istext?istext=='json'?'json':'text':'arraybuffer';
-        request.open('GET',url);
-        request.send();
-    });
 }
 
 function createInitializationVector(segmentNumber) {
@@ -70,20 +59,29 @@ function createInitializationVector(segmentNumber) {
     }
     return uint8View;
   }
-self.addEventListener('message',async function(event){
-    if(event.data=='close'){
-        if(chunks.length){
+function outputData(event){
+    if(chunksData.length){
+        postMessage({
+            close:true,
+            ready:'下载完成',
+            result:[
+                [chunksDuration,new Blob(chunksData,{type:'video/mp2t'})]
+            ]
+        });
+    }else{
+        const datalist = Object.values(bufferChunks);
+        if(datalist.length){
             postMessage({
-                close:true,
-                PathIndex,
                 ready:'下载完成',
-                result:new Blob(chunks,{type:'video/mp2t'})
+                result:datalist.map(entry=>{
+                    return [entry.duration,new Blob(entry.data,{type:'video/mp2t'})]
+                })
             });
         }
-        return self.close();
-    }else if(typeof event.data !='string'){
-        return;
     }
+    self.close();
+}
+async function downTS(event){
     let url = event.data;
     const list = [];
     postMessage({
@@ -156,15 +154,10 @@ self.addEventListener('message',async function(event){
     postMessage({
         info:'解析完毕,进行下载',
     });
-    let index = 0;
     let length = 0;
-    let nowbuff;
-    let AesIndex = {};
     let AesKEY = {};
-    //postMessage({log:list});
-    //console.log(list);
-    let duration = 0;
     for(let frag of list){
+        if(stopdown) break;
         let databuf = await ajax(frag.uri,null,(loadsize,fullsize,chunksize)=>{
             let sd = '当前速率'+(chunksize/1024).toFixed(0)+'KB';
             let cp = fullsize>0?',当前进度'+(loadsize*100/fullsize).toFixed(2)+'%':'';
@@ -172,24 +165,12 @@ self.addEventListener('message',async function(event){
                 info:'下载中:'+(length+1)+'/'+list.length+sd+cp,
             });
         });
+        if(stopdown) break;
         if(databuf&&databuf.byteLength){
-            duration += parseFloat(frag.duration);
             if (frag.key&&frag.key.href) {
-                if(nowbuff!=frag.key.href&&chunks.length){
-                    let result = new Blob(chunks,{type:'video/mp2t'});
-                    postMessage({
-                        ready:'下载完成',
-                        PathIndex,
-                        result,
-                        duration
-                    });
-                    chunks = [];
-                    duration = 0;
-                    PathIndex+=1;
-                }
-                nowbuff = frag.key.href;
+                if(!bufferChunks[frag.key.href]) bufferChunks[frag.key.href] = {duration:0,data:[]};
                 let iv = createInitializationVector(length).buffer;
-                if(0&&self.crypto){
+                if(self.crypto){
                     if(!AesKEY[frag.key.href]){
                         AesKEY[frag.key.href] = await crypto.subtle.importKey('raw',await (await fetch(frag.key.href)).arrayBuffer(),"AES-CBC",false,['decrypt','encrypt']);
                     }
@@ -204,24 +185,28 @@ self.addEventListener('message',async function(event){
                         AESLIST[frag.key.href] = aes;
                     }
                     databuf = AESLIST[frag.key.href].decrypt(databuf,0,iv,true);
-
                 }
+                bufferChunks[frag.key.href]['duration'] += parseFloat(frag.duration);
+                bufferChunks[frag.key.href]['data'].push(databuf);
+            }else{
+                chunksDuration += parseFloat(frag.duration);
+                chunksData.push(databuf);
             }
             length++;
-            chunks.push(databuf);
         }
     }
-    if(!chunks.length) {
-        postMessage({
-            info:'下载失败',
-        });
+    return outputData(event,true);
+
+}
+let stopdown = false;
+self.addEventListener('message',async function(event){
+    if(event.data=='close'){
+        stopdown = true;
+        return ;
+    }else if(event.data=='exit'){
         self.close();
-        return
-    };
-    chunks.length&&postMessage({
-        PathIndex,
-        result:new Blob(chunks,{type:'video/mp2t'}),
-        duration
-    });
-    self.close();
+        return ;
+    }else if(typeof event.data =='string'&&/^http/.test(event.data)){
+        return downTS(event);
+    }
 });

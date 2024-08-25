@@ -109,6 +109,8 @@ body {
 }
 
 .p-block {
+    display: inline-block;
+    cursor: pointer;
     margin: 2px auto;
 }
 

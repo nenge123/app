@@ -21,7 +21,7 @@ class WorkerService extends WorkerApp{
                 case urlinfo.hostname == 'lishijieacg.co':
                 case urlinfo.hostname == 'www.ikdmjx.com':
                 case urlinfo.origin == this.npmcdn:
-                    return event.respondWith(this.getResponse(request,this.cache_cdn,false));
+                    return event.respondWith(this.getResponse(request,this.cache_cdn,-1));
                 break;
                 default:
                     return this.callMethod('fetch_cross_other',event,urlinfo.hostname,urlinfo.origin)||false;
@@ -61,10 +61,10 @@ class WorkerService extends WorkerApp{
     async openCache(cachename){
         return cachename instanceof Cache ? cachename:await caches.open(cachename);
     }
-    async MatchCache(request,cache,update){
+    async MatchCache(request,cache,origin){
         let response = await cache.match(request);
-        if(update&&!response){
-            response = await fetch(request,{headers:this.no_cache});
+        if(origin&&!response){
+            response = await fetch(request,{headers:this.no_cache,mode:'same-origin'});
             if(response&&response.status==200){
                 cache.put(request,response.clone());
             }
@@ -75,16 +75,16 @@ class WorkerService extends WorkerApp{
      * 
      * @param {Request|String} request 
      * @param {Cache|String} cachename 
-     * @param {null|boolean} update 
+     * @param {null|boolean} origin 
      * @returns 
      */
-    async getResponse(request,cachename,update){
+    async getResponse(request,cachename,origin){
         let cache = await this.openCache(cachename);
-        let response = await this.MatchCache(request,cache,update);
+        let response = await this.MatchCache(request,cache,origin);
         if(!response){
-            response = await fetch(request).catch(e=>new Response(undefined,{status:404,statusText:'not found'}));
-            if(response&&(response.status==200||(response.type=='opaque'&&!response.statusText))){
-                cache.put(request,response.clone());
+            response = await fetch(request,{mode:origin===-1?'cors':'no-cors'}).catch(e=>new Response(undefined,{status:404,statusText:'not found'}));
+            if(response&&(response.status==200||response.type=='opaque'||response.type =='cors')){
+                cache.put(request.url,response.clone());
             }
         }
         return response;

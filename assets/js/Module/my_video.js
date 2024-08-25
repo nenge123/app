@@ -193,7 +193,8 @@ export default class MY_VIDEO {
                 delete this.hls;
             }
             if (this.tsdown) {
-                this.tsdown.postMessage('close');
+                this.tsdown.postMessage('exit');
+                this.tsdown.terminate();
                 delete this.tsdown;
             }
             playElm.classList.add('hide');
@@ -288,21 +289,6 @@ export default class MY_VIDEO {
                     this.hls.attachMedia(video);
                 }
                 this.hls.loadSource(src);
-                /*
-                const V = this;
-                video.onended = function () {
-                    if (!V.hls) return;
-                    let srclist = Array.from(document.querySelectorAll("#video-play [data-src]"), v => decodeURI(v.getAttribute('data-src')));
-                    if (srclist.length <= 1) return;
-                    let pos = srclist.indexOf(V.hls.url) + 1;
-                    if (pos <= 0 || pos == srclist.length) {
-                        pos = 0;
-                    }
-                    V.hls.loadSource(srclist[0]);
-                    V.hls.attachMedia(video);
-                    this.play();
-                };
-                */
                 video.play();
             }
         }
@@ -320,7 +306,6 @@ export default class MY_VIDEO {
         details.appendChild(summary);
         const showdata = document.createElement('div');
         showdata.innerHTML = '<ins>苹果手机存在异常<br>因此请等待全部内容块下载完毕再点击片段下载!!!<br>正常情况下低于30秒可能为广告!</ins>';
-        details.appendChild(showdata);
         details.open = true;
         this.tsdown = new Worker(self.jspath + 'Worker/downTS.js');
         this.tsdown.addEventListener('message', function (event) {
@@ -331,24 +316,27 @@ export default class MY_VIDEO {
                 } else if (data.info) {
                     elm.innerHTML = data.info;
                 } else if (data.result) {
-                    const href = URL.createObjectURL(data.result);
-                    const filename = elm.getAttribute('title') + ' 片段(' + data.PathIndex + ').ts';
-                    if (data.close) {
-                        return N.downURL(href, filename);
-                    }
-                    const duration = data.duration ? '约' + (data.duration > 60 ? Math.ceil(data.duration / 6) / 10 + '分' : Math.ceil(data.duration) + '秒') : '';
-                    const textname = elm.getAttribute('title') + '-片段(' + data.PathIndex + ')';
-                    const p = document.createElement('p');
-                    p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
-                    p.setAttribute('data-href', href);
-                    p.setAttribute('data-name', filename);
-                    p.classList.add('p-block');
-                    p.style.margin = '15px 0px';
-                    showdata.appendChild(p);
-                    p.addEventListener('click', function () {
-                        N.downURL(this.getAttribute('data-href'), this.getAttribute('data-name'));
+                    console.log(data);
+                    const filename = elm.getAttribute('title') + ' 片段';
+                    Array.from(data.result,(entry,index)=>{
+                        console.log(entry);
+                        const href = URL.createObjectURL(entry[1]);
+                        const downname = filename+index+'.ts';
+                        const duration = entry[0] ? '约' + (entry[0] > 60 ? Math.ceil(entry[0] / 6) / 10 + '分' : Math.ceil(entry[0]) + '秒') : '';
+                        const textname = elm.getAttribute('title') + '-片段(' + index + ')';
+                        const p = document.createElement('p');
+                        p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
+                        p.setAttribute('data-href', href);
+                        p.setAttribute('data-name', downname);
+                        p.classList.add('p-block');
+                        p.style.margin = '15px 0px';
+                        details.appendChild(p);
+                        p.addEventListener('click', function () {
+                            N.downURL(this.getAttribute('data-href'), this.getAttribute('data-name'));
+                        });
                     });
                     delete data.result;
+                    this.terminate();
                 } else if (data.close) {
                     elm.removeAttribute('startdown');
                     if (data.ready) elm.innerHTML = data.ready;
@@ -362,5 +350,12 @@ export default class MY_VIDEO {
         });
         let src = decodeURI(elm.getAttribute('data-down'));
         this.tsdown.postMessage(src);
+        const tostop = document.createElement('p');
+        tostop.innerHTML = '<b>立即终止下载,并且返回数据!</b>';
+        tostop.classList.add('p-block');
+        details.appendChild(tostop);
+        tostop.addEventListener('click',e=>{
+            this.tsdown.postMessage('close');
+        });
     }
 }

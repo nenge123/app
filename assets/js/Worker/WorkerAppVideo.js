@@ -80,13 +80,16 @@ const AppSQL = new class extends WorkerAppSQLite {
             html_page_pagination(pagelist,page,maxpage,total){
                 let html = '<div class="first"><button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',1,arguments)" ' + (page === 1 ? 'class="active"' : '') + '>第一页</button>';
                 if (pagelist.length) {
-                    html += '&nbsp;&nbsp;<label>选页:<select onchange="N.runModule(\'myVideo\',\'SetPage\',this.value);">';
+                    html += '&nbsp;&nbsp;<label><select onchange="N.runModule(\'myVideo\',\'SetPage\',this.value);">';
+                    html += '<option value="0" selected>选页</option>';
                     pagelist.forEach(p => {
-                        html += '<option value="' + p + '" ' + (p === page ? 'selected' : '') + '>第' + p + '页</option>';
+                        html += '<option value="' + p + '">第' + p + '页</option>';
                     });
                     html += '</select></label>';
                 }
-                html += '&nbsp;&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',' + maxpage + ',arguments)" ' + (page === maxpage ? 'class="active"' : '') + '>最后一页</button>&nbsp;&nbsp;<from><label>跳转:<input class="textbox" style="width: 80px;" type="number" value="' + page + '" onchange="N.runModule(\'myVideo\',\'SetPage\',this.value,arguments)"></label></from></div>';
+                html += '&nbsp;&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',' + (page+1) + ',arguments)">下一页</button>';
+                html += '&nbsp;&nbsp;<button type="button" class="l-btn" onclick="N.runModule(\'myVideo\',\'SetPage\',' + maxpage + ',arguments)" ' + (page === maxpage ? 'class="active"' : '') + '>最后一页</button>';
+                html+='&nbsp;&nbsp;<from><label>跳转:<input class="textbox" style="width: 80px;" type="number" value="' + page + '" onchange="N.runModule(\'myVideo\',\'SetPage\',this.value,arguments)"></label></from></div>';
                 return `<div class="flex-left-right">${html}<p class="p-block"><b>1-${maxpage}</b><span>页</span><b>${total}</b><span>条数据</span></p></div>`;
 
             },
@@ -97,6 +100,7 @@ const AppSQL = new class extends WorkerAppSQLite {
                 let html = '<h2>' + item.title + '</h2>';
                 let html2 = '<h3 style="margin-top:50px">苹果用户需要所有下载文件块下载完毕,非常消耗内存,因此下载一次建议重开页面!</h2>';
                 html += '<div style="margin:10px 0px;"><video id="video-media" controls poster="'+item.img+'"></video></div>';
+                html +='<p class="p-block" onclick="document.querySelector(\'#video-media\').play()"><b>异常时点击继续播放</b></p>';
                 if(urllist.length<maxlen){
                     html += '<details style="margin:10px 0px;"  open><summary>播放列表</summary><ol class="ul-grid">';
                     html2 += '<details style="margin:10px 0px;" close><summary>视频下载</summary><ol>'

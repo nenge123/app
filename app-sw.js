@@ -19,11 +19,6 @@ Object.entries({
                 case url.indexOf('/assets/') !==-1:
                 case request.headers.get('ajax-fetch')!=null:
                     response = this.getResponse(request,this.cache_files,true);
-                    //if(location.hostname == 'local.nenge.net'){
-                    //    response = fetch(request,{cache:'no-cache'});
-                    //}else{
-                    //    response = this.getResponse(request,this.cache_files,false);
-                    //}
                 break;
                 case url==''||url=='/'||url=='/index.html':
                     response = this.getResponse(location.origin+'/assets/template/template-index.htm',this.cache_files,true);
