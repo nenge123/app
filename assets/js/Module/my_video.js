@@ -324,6 +324,7 @@ export default class MY_VIDEO {
                         const downname = filename+index+'.ts';
                         const duration = entry[0] ? '约' + (entry[0] > 60 ? Math.ceil(entry[0] / 6) / 10 + '分' : Math.ceil(entry[0]) + '秒') : '';
                         const textname = elm.getAttribute('title') + '-片段(' + index + ')';
+                        details.appendChild(document.createElement('br'));
                         const p = document.createElement('p');
                         p.innerHTML = `<span>${textname}</span><b>${duration}</b>`;
                         p.setAttribute('data-href', href);
