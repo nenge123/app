@@ -127,9 +127,12 @@ export default class MY_VIDEO {
     async getList(arg) {
         this.loading();
         const worker = await this.openSQL();
+        const offset = this.Elm.querySelector('main').getBoundingClientRect();
+        let limit = Math.floor((offset.width - 14)/(183+10)) * 2;
+        if(limit<8)limit = 8;
         arg = arg ? arg : this.playdata;
         arg.maxlength = 10;
-        arg.limit = 30;
+        arg.limit = limit;
         let result = await worker.postMethod('Html2Video', arg);
         this.Elm.classList.remove('loading');
         this.maxpage = result.maxpage;

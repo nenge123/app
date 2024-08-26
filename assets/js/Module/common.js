@@ -201,6 +201,9 @@ self.N = new class NengeCommon{
             }
         });
     }
+    constructor(){
+        this.serviceWorker = new MyWorker({url:'/app-sw.js',mode:'service'});
+    }
 
 };
 self.N.methods = methods;
