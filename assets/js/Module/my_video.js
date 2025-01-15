@@ -278,6 +278,7 @@ export default class MY_VIDEO {
         const playElm = document.querySelector('#video-play');
         const video = playElm.querySelector('#video-media');
         let src = decodeURI(elm.getAttribute('data-src'));
+        video.removeAttribute('src');
         playElm.querySelector('header .center').innerHTML = elm.innerHTML;
         playElm.querySelector('main').scrollTop = 0;
         // center center no-repeat cover';
@@ -287,10 +288,11 @@ export default class MY_VIDEO {
         } else {
             if (!self.Hls) await import('https://unpkg.com/hls.js@1.5.14/dist/hls.min.js');
             if (Hls.isSupported()) {
-                if (!this.hls) {
-                    this.hls = new self.Hls();
-                    this.hls.attachMedia(video);
+                if (this.hls) {
+                    this.hls.destroy();
                 }
+                this.hls = new self.Hls();
+                this.hls.attachMedia(video);
                 this.hls.loadSource(src);
                 video.play();
             }

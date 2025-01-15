@@ -71,6 +71,7 @@ body {
     background-repeat: no-repeat;
     background-position: center center;
     aspect-ratio: 1080 / 720;
+    max-height: 60vh;
 }
 
 .window {

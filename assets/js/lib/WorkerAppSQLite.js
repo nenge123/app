@@ -150,8 +150,13 @@ class WorkerAppSQLite extends self.WorkerApp {
 
             },
             insert_data_and_tag(json, keys) {
+                const insertsql = 'INSERT INTO `data` ('+keys.map(v=>'`'+v+'`').join(',')+') VALUES ('+keys.map(v=>'`'+v+'`').join(',')+');';
+                const updatesql = 'UPDATE `data` SET '+keys.map(v=>'`'+v+'`=?').join(',')+' WHERE id=?;';
+                this.database.exec('PRAGMA synchronous=OFF');
+                this.database.exec('BEGIN TRANSACTION;');
+                const typedata = new Map;
                 for (let item of json) {
-                    let updatedata = Object.fromEntries(keys.map(v=>[v,item[v]||'']));
+                    const updatedata = Object.fromEntries(keys.map(v=>[v,item[v]||'']));
                     if (updatedata['id']) {
                         //存在数据更新
                         const result = this.database.selectOne('data',{id:updatedata['id']});
@@ -163,14 +168,26 @@ class WorkerAppSQLite extends self.WorkerApp {
                     this.database.insertJson('data',updatedata);
                     if (updatedata.type) {
                         let type_name = item.type.trim();
-                        let type_num = this.database.selectColumnJson('tag',{name:type_name}, '`num`');
-                        if (!type_num) {
-                            this.database.insertJson('tag', { name:type_name, num: 1 });
-                        } else {
-                            this.database.updateJson('tag',{num:type_num+1},{name:type_name});
+                        const v = typedata.get(type_name);
+                        if(!v){
+                            typedata.set(type_name,1);
+                        }else{
+                            typedata.set(type_name,v+1);
                         }
                     }
                 }
+                if(typedata.size){
+                    for(let item of typedata){
+                        let type_num = this.database.selectColumnJson('tag',{name:item[0]}, '`num`');
+                        if (!type_num) {
+                            this.database.insertJson('tag', { name:item[0], num:item[1]});
+                        } else {
+                            this.database.updateJson('tag',{num:item[1]},{name:item[0]});
+                        }
+
+                    }
+                }
+                this.database.exec('END TRANSACTION;');
             },
             page_pagination(page, maxpage,total, maxlength) {
                 maxlength = maxlength ? maxlength : 8;

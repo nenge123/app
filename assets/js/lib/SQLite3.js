@@ -135,12 +135,12 @@ function getSQLite3(sqlite3){
             const values = where&&Object.values(where)||[];
             const param = Object.values(data);
             if(values.length)param.push(...values);
-            return this.exec(this.str_update(table)+this.str_param(Object.keys(data)) + this.str_where(keys) + ' ;', param);
+            return this.updateSQL(table,this.str_param(Object.keys(data)) + this.str_where(keys) + ' ;', param);
         }
         insertJson(table, data, where) {
             if(where)this.delete(table,where);
             const param = Object.values(data);
-            return this.exec(this.str_insert(table)+' ( '+this.str_qoute(Object.keys(data))+' ) VALUES ( ' + this.str_var(param.length)+ ' ) ',param);
+            return this.insertSQL(table,'( '+this.str_qoute(Object.keys(data))+' ) VALUES ( ' + this.str_var(param.length)+ ' ) ',param);
         }
         createTable(table,list) {
             let keys = typeof list === 'string' ? list : Array.from(Object.entries(list), s => '`' + s[0] + '` ' + s[1]).join(',');
@@ -159,28 +159,5 @@ function getSQLite3(sqlite3){
             }
         }
     }
-    return new Promise(async back=>{
-        const response = await fetch('https://unpkg.com/sql.js@1.11.0/dist/sql-wasm.wasm');
-        if(!response||!response.body){
-            throw 'net error';
-        }
-        const total = parseInt(response.headers.get('content-length')||652953);
-        const reader  = response.body.getReader();
-        const chunk = [];
-        let loaded = 0;
-        while(true){
-            const { done, value } = await reader.read();
-            if(done){
-                break;
-            }
-            loaded += value.byteLength;
-            port&&port.postMessage({method:'wasmload',loaded,total,speed:value.byteLength});
-            chunk.push(value);
-        }
-        const wasmBinary =  await WorkerApp.callFunc('loadBuffer',url);
-        initSqlJs({wasmBinary});
-        const sqlite3 = await initSqlJsPromise;
-        delete sqlite3.wasmBinary;
-    })
 };
 self.getSQLite3 = getSQLite3;
